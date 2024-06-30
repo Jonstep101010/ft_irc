@@ -2,7 +2,7 @@
 # show up in IDEs unless they are listed in add_library.
 
 # Make an automatic library - will be static or dynamic based on user setting
-file(GLOB sources something.hpp something.cpp)
+file(GLOB sources *.hpp *.cpp)
 
 add_library(libIRC SHARED ${sources} ${HEADER_LIST})
 

@@ -1,6 +1,9 @@
-#include "something.hpp"
-#include <cassert>
+#include "Channel.hpp"
+#include "ClientHandler.hpp"
+#include "User.hpp"
 
 int main() {
-	assert(true == returnstrue());
+	User          none;
+	ClientHandler none2;
+	Channel       none3;
 }
