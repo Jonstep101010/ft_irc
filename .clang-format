@@ -1,0 +1,16 @@
+﻿---
+IndentWidth: 4
+AccessModifierOffset: -4
+ColumnLimit: '65'
+AlignAfterOpenBracket: Align
+TabWidth: '4'
+UseTab: ForContinuationAndIndentation
+BreakBeforeBinaryOperators: All
+AlignOperands: AlignAfterOperator
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: NextLineOnly
+AlignConsecutiveAssignments: AcrossEmptyLines
+AlignConsecutiveDeclarations: true
+PointerAlignment: Left
+ReflowComments: false
+...
