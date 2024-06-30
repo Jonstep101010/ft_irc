@@ -1,6 +1,5 @@
 #pragma once
 #include "User.hpp"
-#include <iostream>
 #include <string>
 
 class ClientHandler {
@@ -20,6 +19,7 @@ public:
 	void parseCommand(std::string const& command);
 
 private:
-	int  _ClientSocket;
-	User _connected_user;
+	int         _ClientSocket;
+	User        _connected_user;
+	std::string _ip;
 };
