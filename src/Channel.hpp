@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+class User;
+
 class Channel {
 
 public:

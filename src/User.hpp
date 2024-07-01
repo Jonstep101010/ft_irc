@@ -1,6 +1,10 @@
 #pragma once
+#include "Channel.hpp"
 #include <iostream>
 #include <string>
+#include <vector>
+
+class Channel;
 
 class User {
 
@@ -21,8 +25,8 @@ public:
 	void leaveChannel(std::string const& channel);
 
 private:
-	std::string _username;
-	std::string _nickname;
-	// operator status? @follow-up
-	// list of channels? @follow-up
+	std::string          _username;
+	std::string          _nickname;
+	bool                 _isOperator;
+	std::vector<Channel> _channels;
 };
