@@ -2,6 +2,7 @@
 #include "User.hpp"
 #include <iostream>
 #include <string>
+#include <vector>
 
 class User;
 
@@ -14,7 +15,7 @@ public:
 
 	Channel& operator=(Channel const& rhs);
 
-	std::string name;
+	std::string name;// can names be changed? @follow-up
 	std::string topic;
 
 	// add user to channel
@@ -27,13 +28,13 @@ public:
 	void broadcastMessage(std::string const& message);
 
 	// set channel topic
-	void setTopic(std::string const& topic);
+	void setTopic(std::string const& newtopic);
 
 	// set mode method
 	// @follow-up
 
 private:
-	User* _users; // use vector? @follow-up
-				  // operator list? @follow-up
-				  // mode settings? @follow-up
+	std::vector<User> _users;
+	// operator list? @follow-up
+	// mode settings? @follow-up
 };

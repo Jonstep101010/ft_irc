@@ -1,6 +1,5 @@
 #pragma once
 #include "Channel.hpp"
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -13,6 +12,8 @@ public:
 	User(User const& src);
 	~User();
 
+	// need to make sure username is unique @follow-up
+	User(std::string const& username);
 	User& operator=(User const& rhs);
 
 	// send a message to the user
@@ -23,6 +24,11 @@ public:
 
 	// leave a channel
 	void leaveChannel(std::string const& channel);
+
+	// _username uniquely identifies a user @follow-up change to map?
+	bool operator==(const User& other) const {
+		return this->_username == other._username;
+	}
 
 private:
 	std::string          _username;

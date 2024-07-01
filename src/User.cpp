@@ -7,6 +7,11 @@
 User::User()
 	: _isOperator(false) {}
 
+User::User(std::string const& username)
+	: _username(username)
+	, _nickname(username)
+	, _isOperator(false) {}
+
 User::User(const User& src)
 	: _isOperator() {
 	*this = src;
