@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+.cache
+build
+IRC
+en.subject.pdf
+tiny
