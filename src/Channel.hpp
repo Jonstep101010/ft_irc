@@ -1,10 +1,10 @@
 #pragma once
-#include "User.hpp"
+#include "Client.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
 
-class User;
+class Client;
 
 class Channel {
 
@@ -15,26 +15,29 @@ public:
 
 	Channel& operator=(Channel const& rhs);
 
-	std::string name;// can names be changed? @follow-up
-	std::string topic;
-
+	/// USER MANAGEMENT ///
 	// add user to channel
-	void addUser(User const& user);
-
+	void addUser(Client const& client);
 	// remove user from channel
-	void removeUser(User const& user);
+	void removeUser(Client const& client);
 
-	// send message to all users in channel
-	void broadcastMessage(std::string const& message);
+	// send message to all Clients in channel
+	void Message(std::string const& message);
 
+	/// CHANNEL MANAGEMENT ///
 	// set channel topic
 	void setTopic(std::string const& newtopic);
-
-	// set mode method
-	// @follow-up
+	// set mode method (will be directed to member functions)
+	void setMode(std::string const& mode);
+	// @todo add mode specific functions
 
 private:
-	std::vector<User> _users;
-	// operator list? @follow-up
-	// mode settings? @follow-up
+	const std::string   _name;
+	std::string         _topic;
+	std::vector<Client> _clients;
+	std::vector<bool>   _is_operator;
+
+	bool        _is_invite_only;
+	bool        _topic_protection;
+	std::string _key; // if empty, no key required
 };

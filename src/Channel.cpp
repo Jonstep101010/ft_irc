@@ -23,7 +23,7 @@ Channel::~Channel() {}
 
 Channel& Channel::operator=(Channel const& rhs) {
 	if (this != &rhs) {
-		_users = rhs._users;
+		_clients = rhs._clients;
 	}
 	return *this;
 }
@@ -33,22 +33,24 @@ Channel& Channel::operator=(Channel const& rhs) {
 */
 
 // add user to channel
-void Channel::addUser(User const& user) { _users.push_back(user); }
+void Channel::addUser(Client const& client) {
+	_clients.push_back(client);
+}
 
 // remove user from channel
-void Channel::removeUser(User const& user) {
+void Channel::removeUser(Client const& client) {
 	// find user
 	// if found, remove user from channel
-	std::vector<User>::iterator toRemove
-		= std::find(_users.begin(), _users.end(), user);
+	std::vector<Client>::iterator toRemove
+		= std::find(_clients.begin(), _clients.end(), client);
 
-	if (toRemove != _users.end()) {
-		_users.erase(toRemove);
+	if (toRemove != _clients.end()) {
+		_clients.erase(toRemove);
 	}
 }
 
 // send message to all users in channel
-void Channel::broadcastMessage(std::string const& message) {
+void Channel::Message(std::string const& message) {
 	(void)message;
 	// send message to all users in channel
 	// how to? @follow-up
@@ -56,7 +58,7 @@ void Channel::broadcastMessage(std::string const& message) {
 
 // set channel topic
 void Channel::setTopic(std::string const& newtopic) {
-	topic = newtopic;
+	_topic = newtopic;
 }
 
 /*
