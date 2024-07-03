@@ -7,8 +7,17 @@ class Client {
 
 public:
 	Client(std::string const& ip, int socket);
+	Client(const std::string& src)
+		: _ClientSocket(), _isConnected(), _isServerOperator() {
+		*this = src;
+	}
+	Client& operator=(const std::string& src) {
+		(void)src;
+		return *this;
+	}
 	Client()
 		: _ClientSocket()
+		, _isConnected()
 		, _isServerOperator() {
 	} // @audit deprecated, only for testing
 	~Client();
@@ -29,6 +38,23 @@ public:
 
 	bool getIsConnected() const { return _isConnected; }
 	void setIsConnected(bool value) { _isConnected = value; }
+	std::string const& getUsername() const { return _username; }
+	std::string const& getNickname() const { return _nickname; }
+	bool               getIsServerOperator() const {
+        return _isServerOperator;
+	}
+
+	void setNickname(std::string const& nickname) {
+		_nickname = nickname;
+	}
+
+	void setUsername(std::string const& username) {
+		_username = username;
+	}
+
+	void setServerOperator(bool value) {
+		_isServerOperator = value;
+	}
 
 	friend class Server;
 

@@ -130,7 +130,16 @@ void Server::handleClientData(Client client) {
 			client.setIsConnected(true);
 			send(client.getClientSocket(), welcomeMsg.c_str(),
 				 welcomeMsg.length(), 0);*/
+			// if (std::string(buffer, bytesReceived).find("NICK")
+			// 	!= std::string::npos) {
+			// 	client.setNickname(
+			// 		std::string(buffer, bytesReceived)
+			// 			.substr(5));
+			// }
+			client.setIsConnected(true);
+			client.setServerOperator(false);
 		}
+		std::cout << "BUFFER: '" << buffer << "'";
 		// std::string joinCnl
 		// 	= ":Aceauses@localhost JOIN #test\r\n";
 		// send(client.getClientSocket(), joinCnl.c_str(),
@@ -163,6 +172,12 @@ void Server::start() {
 				} else {
 					handleClientData(_clients[i - 1]);
 					// _pollfds[0].revents = 0;
+					std::cout << "username: "
+							  << _clients[i - 1].getUsername()
+							  << std::endl;
+					std::cout << "nickname: "
+							  << _clients[i - 1].getNickname()
+							  << std::endl;
 				}
 			}
 		}
