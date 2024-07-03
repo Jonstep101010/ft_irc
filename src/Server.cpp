@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <iostream>
@@ -97,25 +98,43 @@ void Server::acceptConnection(int listeningSocket) {
 	pollfd newPollFd = {clientSocket, POLLIN, 0};
 	_pollfds.push_back(newPollFd);
 
+	// Make a client and add it to the vector
+	std::string ip = inet_ntoa(clientAddr.sin_addr);
+	Client      newClient(ip, clientSocket);
+	_clients.push_back(newClient);
+
 	std::cout << "New connection accepted" << std::endl;
 }
 
-void handleClientData(int clientSocket) {
+void handleClientData(Client client) {
 	char    buffer[1024];
-	ssize_t bytesReceived
-		= recv(clientSocket, buffer, sizeof(buffer), 0);
+	ssize_t bytesReceived = recv(client.getClientSocket(),
+								 buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
 	} else if (bytesReceived == 0) {
-		// Connection closed by client
-		std::cout << std::string(buffer, bytesReceived)
-				  << std::endl;
-		close(clientSocket);
-		std::cout << "Client disconnected" << std::endl;
+		// @follow-up NOTE this we still dont know when happens
 	} else {
 		std::cout << "Received data: "
 				  << std::string(buffer, bytesReceived);
+		if (!client.getIsConnected()) {
+			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
+			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
+			*/
+
+			/* @follow-up This are just examples of how to send data to the client
+			std::string welcomeMsg
+				= ":localhost 001 Aceauses :Welcome "
+				  "to the IRC server!\r\n";
+			client.setIsConnected(true);
+			send(client.getClientSocket(), welcomeMsg.c_str(),
+				 welcomeMsg.length(), 0);*/
+		}
+		// std::string joinCnl
+		// 	= ":Aceauses@localhost JOIN #test\r\n";
+		// send(client.getClientSocket(), joinCnl.c_str(),
+		// 	 joinCnl.size(), 0);
 	}
 }
 /*
@@ -130,7 +149,8 @@ void Server::start() {
 	// @follow-up Make the while loop to be until a signal was received
 	while (_running) {
 		// @follow-up Handle poll() and acceptConnection()
-		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1) {
+		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1
+			&& errno != EINTR) {
 			std::cerr << "Poll error: " << strerror(errno)
 					  << std::endl;
 		}
@@ -141,7 +161,7 @@ void Server::start() {
 							  << std::endl;
 					acceptConnection(_pollfds[i].fd);
 				} else {
-					handleClientData(_pollfds[i].fd);
+					handleClientData(_clients[i - 1]);
 					// _pollfds[0].revents = 0;
 				}
 			}
