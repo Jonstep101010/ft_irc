@@ -17,6 +17,7 @@ public:
 
 	void makeSocket();
 	void start();
+	void acceptConnection(int listeningSocket);
 
 	// manage commands passed by clients @follow-up
 	void executeCommand(std::string const& command);
