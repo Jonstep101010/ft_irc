@@ -106,7 +106,56 @@ void Server::acceptConnection(int listeningSocket) {
 	std::cout << "New connection accepted" << std::endl;
 }
 
-void Server::handleClientData(Client client) {
+std::string get_cmd(std::string data) {
+	size_t pos = data.find_first_of(" ");
+	if (pos != std::string::npos) {
+		std::string cmd = data.std::string::substr(0, pos);
+		std::cout << "Command: " << cmd << std::endl;
+		return cmd;
+	}
+	return "";
+}
+
+// need more checks for invalid input
+std::string get_after_cmd(std::string data) {
+	size_t pos = data.find_first_of(" ");
+	if (pos != std::string::npos) {
+		std::string after_cmd
+			= data.std::string::substr(pos + 1);
+		std::cout << "After Command: '" << after_cmd << "'"
+				  << std::endl;
+		return after_cmd;
+	}
+	return "";
+}
+
+void Server::executeCommand(Client const&      client,
+							std::string const& data) {
+	std::cout << "Executing command: " << data << std::endl;
+	if (get_cmd(data) == "JOIN") {
+		std::string after = get_after_cmd(data);
+		if (!after.empty() && after[0] == '#') {
+			std::string channel_name = after.substr(
+				1, after.find_first_of("\r\n") - 1);
+			if (Server::findname(channel_name, _channels)
+				== _channels.end()) {
+				Channel newchannel(channel_name);
+				_channels.push_back(newchannel);
+				std::cout << "Channel created: '" << channel_name
+						  << "'" << std::endl;
+			}
+			std::vector<Channel>::iterator join_channel
+				= Server::findname(channel_name, _channels);
+			if (join_channel != _channels.end()) {
+				join_channel->addUser(client);
+			} else {
+				std::cerr << "Channel not found" << std::endl;
+			}
+		}
+	}
+}
+
+void Server::handleClientData(Client& client) {
 	char    buffer[1024];
 	ssize_t bytesReceived = recv(client.getClientSocket(),
 								 buffer, sizeof(buffer), 0);
@@ -118,19 +167,23 @@ void Server::handleClientData(Client client) {
 	} else {
 		std::cout << "Received data: "
 				  << std::string(buffer, bytesReceived);
-		if (!client.getIsConnected()) {
+		if (!client._isConnected) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
 
 			/* @follow-up This are just examples of how to send data to the client
+				 */
 			std::string welcomeMsg
 				= ":localhost 001 Aceauses :Welcome "
 				  "to the IRC server!\r\n";
-			client.setIsConnected(true);
+			client._isConnected = true;
 			send(client.getClientSocket(), welcomeMsg.c_str(),
-				 welcomeMsg.length(), 0);*/
+				 welcomeMsg.length(), 0);
+			client._name = "tiny_user";
 		}
+		executeCommand(client,
+					   std::string(buffer, bytesReceived));
 		// std::string joinCnl
 		// 	= ":Aceauses@localhost JOIN #test\r\n";
 		// send(client.getClientSocket(), joinCnl.c_str(),

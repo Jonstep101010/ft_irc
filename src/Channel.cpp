@@ -1,40 +1,25 @@
 #include "Channel.hpp"
+#include "defines.hpp"
 #include <algorithm>
 #include <iterator>
 #include <vector>
 
 /*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
-
-Channel::Channel() {}
-
-Channel::Channel(const Channel& src) { *this = src; }
-
-/*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
-
-Channel::~Channel() {}
-
-/*
 ** --------------------------------- OVERLOAD ---------------------------------
 */
-
-Channel& Channel::operator=(Channel const& rhs) {
-	if (this != &rhs) {
-		_clients = rhs._clients;
-	}
-	return *this;
-}
 
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
 
 // add user to channel
+// @follow-up handle modes, Client already joined, limit reached
 void Channel::addUser(Client const& client) {
-	_clients.push_back(client);
+	if (std::find(_clients.begin(), _clients.end(), client)
+		== _clients.end()) {
+		client.clientOutput(JOINEDREPLY);
+		_clients.push_back(client);
+	}
 }
 
 // remove user from channel

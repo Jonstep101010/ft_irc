@@ -9,11 +9,28 @@ class Client;
 class Channel {
 
 public:
-	Channel();
-	Channel(Channel const& src);
-	~Channel();
+	/*
+	** ------------------------------- CONSTRUCTOR --------------------------------
+	*/
+	Channel(std::string const& name)
+		: _name(name), _is_invite_only(), _topic_protection() {}
 
-	Channel& operator=(Channel const& rhs);
+	Channel()
+		: _is_invite_only(), _topic_protection() {}
+
+	Channel(const Channel& src)
+		: _name(src._name)
+		, _topic(src._topic)
+		, _clients(src._clients)
+		, _is_operator(src._is_operator)
+		, _is_invite_only(src._is_invite_only)
+		, _topic_protection(src._topic_protection)
+		, _key(src._key) {}
+	~Channel() {}
+
+	bool operator==(const Client& other) const {
+		return this->_name == other._name;
+	}
 
 	/// USER MANAGEMENT ///
 	// add user to channel
