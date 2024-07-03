@@ -106,7 +106,7 @@ void Server::acceptConnection(int listeningSocket) {
 	std::cout << "New connection accepted" << std::endl;
 }
 
-void handleClientData(Client client) {
+void Server::handleClientData(Client client) {
 	char    buffer[1024];
 	ssize_t bytesReceived = recv(client.getClientSocket(),
 								 buffer, sizeof(buffer), 0);

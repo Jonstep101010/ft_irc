@@ -31,6 +31,8 @@ public:
 	void setMode(std::string const& mode);
 	// @todo add mode specific functions
 
+	friend class Server;
+
 private:
 	const std::string   _name;
 	std::string         _topic;

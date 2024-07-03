@@ -19,9 +19,9 @@ public:
 
 	void clientOutput(std::string const& message);
 
-	// _username uniquely identifies a user @follow-up change to map?
+	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
-		return this->_username == other._username;
+		return this->_name == other._name;
 	}
 
 	std::string const& getIP() const { return _ip; }
@@ -30,10 +30,12 @@ public:
 	bool getIsConnected() const { return _isConnected; }
 	void setIsConnected(bool value) { _isConnected = value; }
 
+	friend class Server;
+
 private:
 	std::string _ip;
 	int         _ClientSocket;
-	std::string _username;
+	std::string _name;
 	std::string _nickname;
 	bool        _isConnected;
 	bool        _isServerOperator;

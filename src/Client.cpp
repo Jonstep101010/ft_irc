@@ -7,7 +7,7 @@
 Client::Client(std::string const& ip, int socket)
 	: _ip(ip)
 	, _ClientSocket(socket)
-	, _username("NotSetYet")
+	, _name("NotSetYet")
 	, _nickname("NotSetYet")
 	, _isServerOperator(false) {
 	(void)_isServerOperator;

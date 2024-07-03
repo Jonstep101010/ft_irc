@@ -34,6 +34,8 @@ public:
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
 
+	void handleClientData(Client client);
+
 private:
 	static Server*             instance;
 	bool                       _running;
@@ -43,4 +45,20 @@ private:
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
+
+	// for finding a channel or client by name, inside any class Server can access
+	template <typename Container>
+	typename Container::iterator
+	findname(std::string const& instance_name,
+			 Container&         collection) {
+
+		for (typename Container::iterator it
+			 = collection.begin();
+			 it != collection.end(); ++it) {
+			if (it->_name == instance_name) {
+				return it;
+			}
+		}
+		return collection.end();
+	}
 };
