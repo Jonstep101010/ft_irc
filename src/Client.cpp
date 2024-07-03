@@ -4,13 +4,11 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-Client::Client(std::string const& ip, int socket,
-			   std::string const& _username,
-			   std::string const& _nickname)
+Client::Client(std::string const& ip, int socket)
 	: _ip(ip)
 	, _ClientSocket(socket)
-	, _username(_username)
-	, _nickname(_nickname)
+	, _username("NotSetYet")
+	, _nickname("NotSetYet")
 	, _isServerOperator(false) {
 	(void)_isServerOperator;
 }

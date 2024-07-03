@@ -6,9 +6,7 @@
 class Client {
 
 public:
-	Client(std::string const& ip, int socket,
-		   std::string const& _username,
-		   std::string const& _nickname);
+	Client(std::string const& ip, int socket);
 	Client()
 		: _ClientSocket()
 		, _isServerOperator() {
@@ -29,10 +27,14 @@ public:
 	std::string const& getIP() const { return _ip; }
 	int getClientSocket() const { return _ClientSocket; }
 
+	bool getIsConnected() const { return _isConnected; }
+	void setIsConnected(bool value) { _isConnected = value; }
+
 private:
 	std::string _ip;
 	int         _ClientSocket;
 	std::string _username;
 	std::string _nickname;
+	bool        _isConnected;
 	bool        _isServerOperator;
 };
