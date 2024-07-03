@@ -1,7 +1,13 @@
 #include "Server.hpp"
+#include <cerrno>
+#include <cstring>
+#include <iostream>
 #include <ostream>
 #include <poll.h>
+#include <string>
+#include <sys/poll.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #define PORT 8080
 
 /*
@@ -68,6 +74,41 @@ void Server::makeSocket() {
 	_pollfds.push_back(newPool);
 }
 
+void Server::acceptConnection(int listeningSocket) {
+	sockaddr_in clientAddr;
+	socklen_t   clientAddrLen = sizeof(clientAddr);
+	int         clientSocket  = accept(
+        listeningSocket, (sockaddr*)&clientAddr, &clientAddrLen);
+	if (clientSocket == -1) {
+		std::cerr << "Accept error: " << strerror(errno)
+				  << std::endl;
+		return;
+	}
+
+	pollfd newPollFd = {clientSocket, POLLIN, 0};
+	_pollfds.push_back(newPollFd);
+
+	std::cout << "New connection accepted" << std::endl;
+}
+
+void handleClientData(int clientSocket) {
+	char    buffer[1024];
+	ssize_t bytesReceived
+		= recv(clientSocket, buffer, sizeof(buffer), 0);
+	if (bytesReceived == -1) {
+		std::cerr << "Recv error: " << strerror(errno)
+				  << std::endl;
+	} else if (bytesReceived == 0) {
+		// Connection closed by client
+		std::cout << std::string(buffer, bytesReceived)
+				  << std::endl;
+		close(clientSocket);
+		std::cout << "Client disconnected" << std::endl;
+	} else {
+		std::cout << "Received data: "
+				  << std::string(buffer, bytesReceived);
+	}
+}
 /*
 @follow-up Function which starts the server and will wait for connections
 @remind The user should be able to choose on which port and ip address to start the server
@@ -80,6 +121,22 @@ void Server::start() {
 	// @follow-up Make the while loop to be until a signal was received
 	while (true) {
 		// @follow-up Handle poll() and acceptConnection()
+		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1) {
+			std::cerr << "Poll error: " << strerror(errno)
+					  << std::endl;
+		}
+		for (size_t i = 0; i < _pollfds.size(); ++i) {
+			if (_pollfds[i].revents & POLLIN) {
+				if (_pollfds[i].fd == _server_socket) {
+					std::cout << "We got a new connection"
+							  << std::endl;
+					acceptConnection(_pollfds[i].fd);
+				} else {
+					handleClientData(_pollfds[i].fd);
+					// _pollfds[0].revents = 0;
+				}
+			}
+		}
+		// Close file descriptors
 	}
-	// Close file descriptors
 }
