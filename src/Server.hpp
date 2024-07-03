@@ -30,7 +30,13 @@ public:
 	void leaveChannel(Client const&  client,
 					  Channel const& channel);
 
+	// signal and free
+	static void staticWrapperSignal(int sig);
+	void        signalHandler(int sig);
+
 private:
+	static Server*             instance;
+	bool                       _running;
 	int                        _server_socket;
 	int                        _port;
 	struct sockaddr_in         _server_addr; // Not required here
