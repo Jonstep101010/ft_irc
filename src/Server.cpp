@@ -15,10 +15,15 @@
 */
 
 Server::Server()
-	: _server_socket(-1), _port(PORT), _server_addr() {}
+	: _running(true)
+	, _server_socket(-1)
+	, _port(PORT)
+	, _server_addr() {
+	instance = this;
+}
 
 Server::Server(const Server& src)
-	: _server_socket(), _port(PORT), _server_addr() {
+	: _running(), _server_socket(), _port(PORT), _server_addr() {
 	*this = src;
 }
 
@@ -26,7 +31,11 @@ Server::Server(const Server& src)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Server::~Server() {}
+Server::~Server() {
+	if (_server_socket >= 0) {
+		close(_server_socket);
+	}
+}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -119,7 +128,7 @@ void Server::start() {
 	std::cout << "Server started on port " << _port << std::endl;
 	std::cout << "Waiting for connections..." << std::endl;
 	// @follow-up Make the while loop to be until a signal was received
-	while (true) {
+	while (_running) {
 		// @follow-up Handle poll() and acceptConnection()
 		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1) {
 			std::cerr << "Poll error: " << strerror(errno)
