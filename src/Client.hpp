@@ -26,7 +26,7 @@ public:
 	void clientInput(std::string const& message);
 	// if currently in a channel, send message to channel (will broadcast to all clients in channel)
 
-	void clientOutput(std::string const& message);
+	void clientOutput(std::string const& message) const;
 
 	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
@@ -34,6 +34,7 @@ public:
 	}
 
 	friend class Server;
+	friend class Channel;
 
 private:
 	std::string _ip;

@@ -20,7 +20,8 @@ public:
 	void acceptConnection(int listeningSocket);
 
 	// manage commands passed by clients @follow-up
-	void executeCommand(std::string const& command);
+	void executeCommand(Client const&      client,
+						std::string const& data);
 
 	// join a channel
 	void joinChannel(Client const&  client,
