@@ -1,7 +1,7 @@
 #pragma once
-#include "defines.hpp"
 #include <ctime>
 #include <string>
+#include <sys/socket.h>
 
 #define MAX_NICKNAME_LEN 9 // @todo implement this
 
@@ -20,11 +20,9 @@ public:
 		, _awaiting_pong(false) {}
 	~Client() {}
 
-	// send a message
-	void Input(std::string const& message);
-	// if currently in a channel, send message to channel (will broadcast to all clients in channel)
-
-	void Output(std::string const& message) const;
+	void Output(std::string const& message) const {
+		send(_ClientSocket, message.c_str(), message.size(), 0);
+	}
 
 	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {

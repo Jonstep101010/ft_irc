@@ -1,4 +1,5 @@
 #include "Channel.hpp"
+#include "Server.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <iterator>
@@ -35,10 +36,22 @@ void Channel::removeUser(Client const& client) {
 }
 
 // send message to all users in channel
-void Channel::Message(std::string const& message) {
-	(void)message;
+void Channel::Message(Client const&      origin,
+					  std::string const& message) {
 	// send message to all users in channel
 	// how to? @follow-up
+	if (_clients.empty()
+		|| findname(origin._name, _clients)
+			   == _clients.end()) {
+		return;
+	}
+	for (std::vector<Client>::iterator it = _clients.begin();
+		 it != _clients.end(); ++it) {
+		if (*it == origin) {
+			continue;
+		}
+		it->Output(message);
+	}
 }
 
 // set channel topic

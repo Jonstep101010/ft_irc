@@ -162,6 +162,39 @@ void Server::executeCommand(Client const&      client,
 			}
 		}
 	}
+	if (get_cmd(data) == "PRIVMSG") {
+		std::string after = get_after_cmd(data);
+		if (!after.empty()) {
+			std::string channel_or_user_name
+				= after.substr(0, after.find_first_of(" "));
+			std::string message
+				= after.substr(after.find_first_of(" ") + 2);
+			std::vector<Channel>::iterator dest_channel
+				= Server::findname(channel_or_user_name,
+								   _channels);
+			if (dest_channel != _channels.end()) {
+				dest_channel->Message(
+					client,
+					PRIVMSG(client._nickname, client._name,
+							client._ip, dest_channel->_name,
+							message));
+			} else {
+				std::vector<Client>::iterator dest_client
+					= Server::findname(channel_or_user_name,
+									   _clients);
+				if (dest_client != _clients.end()) {
+					dest_client->Output(PRIVMSG(
+						client._nickname, client._name,
+						client._ip, dest_client->_nickname,
+						message));
+				} else {
+					// @todo send error message to client
+					std::cerr << "Destination not found"
+							  << std::endl;
+				}
+			}
+		}
+	}
 }
 
 void Server::pingClients() {
