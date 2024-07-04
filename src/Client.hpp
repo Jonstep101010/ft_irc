@@ -13,8 +13,6 @@ public:
 	Client(std::string const& ip, int socket)
 		: _ip(ip)
 		, _ClientSocket(socket)
-		, _name(USER_DEFAULT_NAME)
-		, _nickname(USER_DEFAULT_NAME)
 		, _isConnected()
 		, _isServerOperator(false) {}
 	~Client() {}
