@@ -15,3 +15,5 @@
 	":" + _server_ip + " 001 " + client._name                   \
 		+ " :Welcome "                                          \
 		  "to the IRC server!\r\n"
+
+#define PING(client_name) "PING " + client_name

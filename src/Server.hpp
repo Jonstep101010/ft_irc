@@ -1,6 +1,7 @@
 #pragma once
 #include "Channel.hpp"
 #include "Client.hpp"
+#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 #include <vector>
@@ -38,11 +39,14 @@ public:
 
 	void handleClientData(Client& client);
 
+	void pingClients();
+
 private:
 	static Server*             instance;
 	bool                       _running;
 	int                        _server_socket;
 	int                        _port;
+	time_t                     _last_ping;
 	std::string                _server_ip;
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;

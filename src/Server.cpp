@@ -1,8 +1,10 @@
 #include "Server.hpp"
-#include <algorithm>
+#include "defines.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <ostream>
 #include <poll.h>
@@ -11,6 +13,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #define PORT 8080
+#define PING_TIMEOUT 30
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -20,6 +23,7 @@ Server::Server()
 	: _running(true)
 	, _server_socket(-1)
 	, _port(PORT)
+	, _last_ping(time(NULL))
 	, _server_ip("not set") {
 	instance = this;
 }
@@ -28,6 +32,7 @@ Server::Server(const Server& src)
 	: _running()
 	, _server_socket()
 	, _port(PORT)
+	, _last_ping(src._last_ping)
 	, _server_ip("not set") {
 	*this = src;
 }
@@ -160,6 +165,23 @@ void Server::executeCommand(Client const&      client,
 	}
 }
 
+void Server::pingClients() {
+	time_t current_time = time(NULL);
+	if (current_time - _last_ping > PING_TIMEOUT) {
+		// std::cout << "Last ping was at: "
+		// 		  << current_time - _last_ping << std::endl;
+		std::cout << "We have: " << _clients.size()
+				  << " of Clients" << std::endl;
+
+		for (size_t i = 0; i < _clients.size(); i++) {
+			send(_clients[i]._ClientSocket,
+				 *PING(_clients[i]._name).c_str(),
+				 *PING(_clients[i]._name).size(), 0);
+		}
+		_last_ping = time(NULL);
+	}
+}
+
 void Server::handleClientData(Client& client) {
 	char    buffer[1024];
 	ssize_t bytesReceived
@@ -223,5 +245,6 @@ void Server::start() {
 				}
 			}
 		}
+		pingClients();
 	}
 }
