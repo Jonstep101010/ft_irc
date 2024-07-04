@@ -1,6 +1,7 @@
 #pragma once
 #include "Channel.hpp"
 #include "Client.hpp"
+#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 #include <vector>
@@ -37,6 +38,8 @@ public:
 	void        signalHandler(int sig);
 
 	void handleClientData(Client& client);
+
+	void pingClients();
 
 private:
 	static Server*             instance;

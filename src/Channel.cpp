@@ -17,7 +17,7 @@
 void Channel::addUser(Client const& client) {
 	if (std::find(_clients.begin(), _clients.end(), client)
 		== _clients.end()) {
-		client.clientOutput(JOINEDREPLY);
+		client.Output(JOINEDREPLY);
 		_clients.push_back(client);
 	}
 }

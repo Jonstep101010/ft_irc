@@ -1,5 +1,6 @@
 #pragma once
 #include "defines.hpp"
+#include <ctime>
 #include <string>
 
 #define MAX_NICKNAME_LEN 9 // @todo implement this
@@ -13,17 +14,17 @@ public:
 	Client(std::string const& ip, int socket)
 		: _ip(ip)
 		, _ClientSocket(socket)
-		, _name(USER_DEFAULT_NAME)
-		, _nickname(USER_DEFAULT_NAME)
 		, _isConnected()
-		, _isServerOperator(false) {}
+		, _isServerOperator(false)
+		, _last_ping_sent(time(NULL))
+		, _awaiting_pong(false) {}
 	~Client() {}
 
 	// send a message
-	void clientInput(std::string const& message);
+	void Input(std::string const& message);
 	// if currently in a channel, send message to channel (will broadcast to all clients in channel)
 
-	void clientOutput(std::string const& message) const;
+	void Output(std::string const& message) const;
 
 	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
@@ -40,4 +41,6 @@ private:
 	std::string _nickname;
 	bool        _isConnected;
 	bool        _isServerOperator;
+	time_t      _last_ping_sent;
+	bool        _awaiting_pong;
 };
