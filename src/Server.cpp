@@ -165,20 +165,10 @@ void Server::executeCommand(Client const&      client,
 	}
 }
 
-void Server::pingClients() {
-	time_t current_time = time(NULL);
-	if (current_time - _last_ping > PING_TIMEOUT) {
-		// std::cout << "Last ping was at: "
-		// 		  << current_time - _last_ping << std::endl;
-		std::cout << "We have: " << _clients.size()
-				  << " of Clients" << std::endl;
-
-		for (size_t i = 0; i < _clients.size(); i++) {
-			send(_clients[i]._ClientSocket,
-				 *PING(_clients[i]._name).c_str(),
-				 *PING(_clients[i]._name).size(), 0);
-		}
-		_last_ping = time(NULL);
+static void remove_termination(std::string& data) {
+	size_t pos = data.find_first_of("\r\n");
+	if (pos != std::string::npos) {
+		data = data.std::string::substr(0, pos);
 	}
 }
 
@@ -194,28 +184,23 @@ void Server::handleClientData(Client& client) {
 	} else {
 		std::string data = std::string(buffer, bytesReceived);
 		if (!client._isConnected) {
+			remove_termination(data);
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
 			std::cout << "Client init: " << data;
-
-			std::string::size_type posNick = data.find("NICK");
-			if (posNick != std::string::npos) {
-				std::string nick = data.substr(posNick + 5);
-				client._nickname
-					= nick.substr(0, nick.length() - 2);
-				// Client is set to connected only after the second message recieved:
-				// The first message is NICK, then after NICK is USER, so then we can set the client to connected
-			}
-			std::string::size_type posReal = data.find(':');
-			if (posReal != std::string::npos) {
-				std::string name = data.substr(posReal + 1);
-				client._name = name.substr(0, name.length() - 2);
-				client._isConnected = true;
+			// The first message is NICK, second is USER
+			if (get_cmd(data) == "NICK") {
+				client._nickname = data.substr(5);
 				client.Output(WELCOME_MESSAGE);
+			} else if (get_cmd(data) == "USER") {
+				client._name = data.substr(data.find(':') + 1);
+				// Client is set to connected only after the second message
+				client._isConnected = true;
 			}
+		} else {
+			executeCommand(client, data);
 		}
-		executeCommand(client, data);
 	}
 }
 /*
