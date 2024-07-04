@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -170,49 +171,29 @@ void Server::handleClientData(Client& client) {
 		// @follow-up NOTE this we still dont know when happens
 	} else {
 		std::string data = std::string(buffer, bytesReceived);
-		std::cout << "Received data: " << data;
 		if (!client._isConnected) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
 
-			/* @follow-up This are just examples of how to send data to the client*/
-			std::string welcomeMsg
-				= ":localhost 001 Aceauses :Welcome "
-				  "to the IRC server!\r\n";
-			send(client._ClientSocket, welcomeMsg.c_str(),
-				 welcomeMsg.length(), 0);
-			// SHOULD BE CHANGED?
-			char* line = strtok(buffer, "\n");
+			client.Output(WELCOME_MESSAGE);
+			std::cout << "Client init: " << data;
 
-			while (line != NULL) {
-				if (line[strlen(line) - 1] == '\r') {
-					line[strlen(line) - 1] = '\0';
-				}
-				if (strncmp(line, "NICK ", 5) == 0) {
-					char* nick       = line + 5;
-					client._nickname = nick;
-					std::cout
-						<< "[DEBUG] Nickname set to: " << nick
-						<< std::endl;
-				}
-				if (strncmp(line, "USER ", 5) == 0) {
-					char* user          = line + 5;
-					client._name        = user;
-					client._isConnected = true;
-					std::cout
-						<< "[DEBUG] Username set to: " << user
-						<< std::endl;
-				}
-				line = strtok(NULL, "\n");
+			std::string::size_type posNick = data.find("NICK");
+			if (posNick != std::string::npos) {
+				client._nickname
+					= data.substr(posNick, data.length());
+				// Client is set to connected only after the second message recieved:
+				// The first message is NICK, then after NICK is USER, so then we can set the client to connected
 			}
-			client._isConnected = true;
+			std::string::size_type posReal = data.find(':');
+			if (posReal != std::string::npos) {
+				std::string name = data.substr(posReal + 1);
+				client._name = name.substr(0, name.length() - 2);
+				client._isConnected = true;
+			}
 		}
 		executeCommand(client, data);
-		// std::string joinCnl
-		// 	= ":Aceauses@localhost JOIN #test\r\n";
-		// send(client.getClientSocket(), joinCnl.c_str(),
-		// 	 joinCnl.size(), 0);
 	}
 }
 /*
@@ -222,7 +203,8 @@ void Server::handleClientData(Client& client) {
 */
 void Server::start() {
 	makeSocket();
-	std::cout << "Server started on port " << _port << std::endl;
+	std::cout << "Server started on " << _server_ip << ":"
+			  << _port << std::endl;
 	std::cout << "Waiting for connections..." << std::endl;
 	// @follow-up Make the while loop to be until a signal was received
 	while (_running) {
@@ -235,9 +217,6 @@ void Server::start() {
 		for (size_t i = 0; i < _pollfds.size(); ++i) {
 			if (_pollfds[i].revents & POLLIN) {
 				if (_pollfds[i].fd == _server_socket) {
-					std::cout << "We got a new connection on "
-								 "server with IP: "
-							  << _server_ip << std::endl;
 					acceptConnection(_pollfds[i].fd);
 				} else {
 					handleClientData(_clients[i - 1]);

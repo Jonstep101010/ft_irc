@@ -7,6 +7,11 @@
  */
 #define JOINEDREPLY                                             \
 	":" + client._name + "@"                                    \
-		+ "127.0.0.1" /* client ip @note change */ + " JOIN "                \
+		+ "127.0.0.1" /* client ip @note change */ + " JOIN "   \
 		+ _name /* channel name */                              \
 		+ "\r\n"
+
+#define WELCOME_MESSAGE                                         \
+	":" + _server_ip + " 001 " + client._name                   \
+		+ " :Welcome "                                          \
+		  "to the IRC server!\r\n"

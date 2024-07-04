@@ -20,10 +20,10 @@ public:
 	~Client() {}
 
 	// send a message
-	void clientInput(std::string const& message);
+	void Input(std::string const& message);
 	// if currently in a channel, send message to channel (will broadcast to all clients in channel)
 
-	void clientOutput(std::string const& message) const;
+	void Output(std::string const& message) const;
 
 	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
