@@ -40,8 +40,12 @@ void Channel::Message(Client const&      origin,
 					  std::string const& message) {
 	// send message to all users in channel
 	// how to? @follow-up
+	for (size_t i = 0; i < _clients.size(); i++) {
+		std::cout << "[MESSAGE] " << _clients[i]._nickname
+				  << std::endl;
+	}
 	if (_clients.empty()
-		|| findname(origin._name, _clients)
+		|| findnickname(origin._nickname, _clients)
 			   == _clients.end()) {
 		return;
 	}

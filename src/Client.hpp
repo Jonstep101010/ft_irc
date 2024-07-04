@@ -1,5 +1,6 @@
 #pragma once
 #include <ctime>
+#include <iostream>
 #include <string>
 #include <sys/socket.h>
 
@@ -21,6 +22,9 @@ public:
 	~Client() {}
 
 	void Output(std::string const& message) const {
+		std::cout << "[SOCKETS] " << _ClientSocket << std::endl;
+		std::cout << "[MESSAGE OUTPUT] " << message.c_str()
+				  << std::endl;
 		send(_ClientSocket, message.c_str(), message.size(), 0);
 	}
 
@@ -33,6 +37,7 @@ public:
 	friend class Channel;
 
 private:
+	std::string _inputBuffer;
 	std::string _ip;
 	int         _ClientSocket;
 	std::string _name;
