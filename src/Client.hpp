@@ -1,4 +1,5 @@
 #pragma once
+#include "defines.hpp"
 #include <string>
 
 #define MAX_NICKNAME_LEN 9 // @todo implement this
@@ -6,21 +7,17 @@
 class Client {
 
 public:
-	Client(std::string const& ip, int socket);
-	Client(const std::string& src)
-		: _ClientSocket(), _isConnected(), _isServerOperator() {
-		*this = src;
-	}
-	Client& operator=(const std::string& src) {
-		(void)src;
-		return *this;
-	}
-	Client()
-		: _ClientSocket()
+	/*
+	** ------------------------------- CONSTRUCTOR --------------------------------
+	*/
+	Client(std::string const& ip, int socket)
+		: _ip(ip)
+		, _ClientSocket(socket)
+		, _name(USER_DEFAULT_NAME)
+		, _nickname(USER_DEFAULT_NAME)
 		, _isConnected()
-		, _isServerOperator() {
-	} // @audit deprecated, only for testing
-	~Client();
+		, _isServerOperator(false) {}
+	~Client() {}
 
 	// send a message
 	void clientInput(std::string const& message);

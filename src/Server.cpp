@@ -165,8 +165,8 @@ void Server::handleClientData(Client& client) {
 	} else if (bytesReceived == 0) {
 		// @follow-up NOTE this we still dont know when happens
 	} else {
-		std::cout << "Received data: "
-				  << std::string(buffer, bytesReceived);
+		std::string data = std::string(buffer, bytesReceived);
+		std::cout << "Received data: " << data;
 		if (!client._isConnected) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
@@ -179,7 +179,7 @@ void Server::handleClientData(Client& client) {
 				  "to the IRC server!\r\n";
 			client._isConnected = true;
 			send(client._ClientSocket, welcomeMsg.c_str(),
-            				 welcomeMsg.length(), 0);
+				 welcomeMsg.length(), 0);
 			// SHOULD BE CHANGED?
 			char* line = strtok(buffer, "\n");
 
@@ -204,12 +204,9 @@ void Server::handleClientData(Client& client) {
 				}
 				line = strtok(NULL, "\n");
 			}
-			client._isConnected      = true;
-			client._isServerOperator = false;
-
+			client._isConnected = true;
 		}
-		executeCommand(client,
-					   std::string(buffer, bytesReceived));
+		executeCommand(client, data);
 		// std::string joinCnl
 		// 	= ":Aceauses@localhost JOIN #test\r\n";
 		// send(client.getClientSocket(), joinCnl.c_str(),

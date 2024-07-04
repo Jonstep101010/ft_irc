@@ -32,7 +32,6 @@ void Server::signalHandler(int sig) {
 }
 
 int main() {
-	Client  none2;
 	Channel none3;
 	Server  none4;
 
