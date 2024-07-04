@@ -157,6 +157,21 @@ void Server::executeCommand(Client const&      client,
 				std::cerr << "Channel not found" << std::endl;
 			}
 		}
+	} else if (data == "QUIT\r\n" || get_cmd(data) == "QUIT") {
+
+		// the quit\r\n will quit without any message, get_cmd will also reaceive a message
+		/* 
+		
+		 Example:
+
+   		QUIT :Gone to have lunch        ; Preferred message format.
+
+   		:syrk!kalt@millennium.stealth.net QUIT :Gone to have lunch ; User
+                                   syrk has quit IRC to have lunch.
+		
+		
+		 */
+		close(client._ClientSocket);
 	}
 }
 
