@@ -19,12 +19,15 @@ Server::Server()
 	: _running(true)
 	, _server_socket(-1)
 	, _port(PORT)
-	, _server_addr() {
+	, _server_ip("not set") {
 	instance = this;
 }
 
 Server::Server(const Server& src)
-	: _running(), _server_socket(), _port(PORT), _server_addr() {
+	: _running()
+	, _server_socket()
+	, _port(PORT)
+	, _server_ip("not set") {
 	*this = src;
 }
 
@@ -64,6 +67,7 @@ void Server::makeSocket() {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
+	struct sockaddr_in _server_addr;
 	_server_addr.sin_family      = AF_INET;
 	_server_addr.sin_addr.s_addr = INADDR_ANY;
 	_server_addr.sin_port        = htons(_port);
@@ -76,7 +80,7 @@ void Server::makeSocket() {
 	if (listen(_server_socket, 3) < 0) {
 		std::cerr << "Error listening" << std::endl;
 	}
-
+	_server_ip            = inet_ntoa(_server_addr.sin_addr);
 	struct pollfd newPool = {};
 	newPool.fd            = _server_socket;
 	newPool.revents       = 0;
@@ -172,12 +176,10 @@ void Server::handleClientData(Client& client) {
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
 
-			/* @follow-up This are just examples of how to send data to the client
-				 */
+			/* @follow-up This are just examples of how to send data to the client*/
 			std::string welcomeMsg
 				= ":localhost 001 Aceauses :Welcome "
 				  "to the IRC server!\r\n";
-			client._isConnected = true;
 			send(client._ClientSocket, welcomeMsg.c_str(),
 				 welcomeMsg.length(), 0);
 			// SHOULD BE CHANGED?
@@ -233,21 +235,14 @@ void Server::start() {
 		for (size_t i = 0; i < _pollfds.size(); ++i) {
 			if (_pollfds[i].revents & POLLIN) {
 				if (_pollfds[i].fd == _server_socket) {
-					std::cout << "We got a new connection"
-							  << std::endl;
+					std::cout << "We got a new connection on "
+								 "server with IP: "
+							  << _server_ip << std::endl;
 					acceptConnection(_pollfds[i].fd);
 				} else {
 					handleClientData(_clients[i - 1]);
-					// _pollfds[0].revents = 0;
-					std::cout
-						<< "username: " << _clients[i - 1]._name
-						<< std::endl;
-					std::cout << "nickname: "
-							  << _clients[i - 1]._nickname
-							  << std::endl;
 				}
 			}
 		}
-		// Close file descriptors
 	}
 }
