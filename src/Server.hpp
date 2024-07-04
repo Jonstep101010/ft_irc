@@ -34,7 +34,7 @@ public:
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
 
-	void handleClientData(Client client);
+	void handleClientData(Client& client);
 
 private:
 	static Server*             instance;

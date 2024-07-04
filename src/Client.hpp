@@ -33,29 +33,6 @@ public:
 		return this->_name == other._name;
 	}
 
-	std::string const& getIP() const { return _ip; }
-	int getClientSocket() const { return _ClientSocket; }
-
-	bool getIsConnected() const { return _isConnected; }
-	void setIsConnected(bool value) { _isConnected = value; }
-	std::string const& getUsername() const { return _username; }
-	std::string const& getNickname() const { return _nickname; }
-	bool               getIsServerOperator() const {
-        return _isServerOperator;
-	}
-
-	void setNickname(std::string const& nickname) {
-		_nickname = nickname;
-	}
-
-	void setUsername(std::string const& username) {
-		_username = username;
-	}
-
-	void setServerOperator(bool value) {
-		_isServerOperator = value;
-	}
-
 	friend class Server;
 
 private:
