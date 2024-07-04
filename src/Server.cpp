@@ -197,14 +197,13 @@ void Server::handleClientData(Client& client) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
-
-			client.Output(WELCOME_MESSAGE);
 			std::cout << "Client init: " << data;
 
 			std::string::size_type posNick = data.find("NICK");
 			if (posNick != std::string::npos) {
+				std::string nick = data.substr(posNick + 5);
 				client._nickname
-					= data.substr(posNick, data.length());
+					= nick.substr(0, nick.length() - 2);
 				// Client is set to connected only after the second message recieved:
 				// The first message is NICK, then after NICK is USER, so then we can set the client to connected
 			}
@@ -213,6 +212,7 @@ void Server::handleClientData(Client& client) {
 				std::string name = data.substr(posReal + 1);
 				client._name = name.substr(0, name.length() - 2);
 				client._isConnected = true;
+				client.Output(WELCOME_MESSAGE);
 			}
 		}
 		executeCommand(client, data);
