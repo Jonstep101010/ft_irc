@@ -2,6 +2,7 @@
 #include "Channel.hpp"
 #include "Client.hpp"
 #include <netinet/in.h>
+#include <string>
 #include <vector>
 
 class Client;
@@ -42,7 +43,7 @@ private:
 	bool                       _running;
 	int                        _server_socket;
 	int                        _port;
-	struct sockaddr_in         _server_addr; // Not required here
+	std::string                _server_ip;
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
