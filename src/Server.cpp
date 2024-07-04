@@ -176,7 +176,7 @@ void Server::handleClientData(Client& client) {
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
 
-			client.clientOutput(WELCOME_MESSAGE);
+			client.Output(WELCOME_MESSAGE);
 			std::cout << "Client init: " << data;
 
 			std::string::size_type posNick = data.find("NICK");
