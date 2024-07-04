@@ -157,16 +157,16 @@ void Server::executeCommand(Client const&      client,
 
 void Server::handleClientData(Client& client) {
 	char    buffer[1024];
-	ssize_t bytesReceived = recv(client.getClientSocket(),
-								 buffer, sizeof(buffer), 0);
+	ssize_t bytesReceived
+		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
 	} else if (bytesReceived == 0) {
 		// @follow-up NOTE this we still dont know when happens
 	} else {
-		std::cout << "Received data: "
-				  << std::string(buffer, bytesReceived);
+		std::string data = std::string(buffer, bytesReceived);
+		std::cout << "Received data: " << data;
 		if (!client._isConnected) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
@@ -178,12 +178,35 @@ void Server::handleClientData(Client& client) {
 				= ":localhost 001 Aceauses :Welcome "
 				  "to the IRC server!\r\n";
 			client._isConnected = true;
-			send(client.getClientSocket(), welcomeMsg.c_str(),
+			send(client._ClientSocket, welcomeMsg.c_str(),
 				 welcomeMsg.length(), 0);
-			client._name = "tiny_user";
+			// SHOULD BE CHANGED?
+			char* line = strtok(buffer, "\n");
+
+			while (line != NULL) {
+				if (line[strlen(line) - 1] == '\r') {
+					line[strlen(line) - 1] = '\0';
+				}
+				if (strncmp(line, "NICK ", 5) == 0) {
+					char* nick       = line + 5;
+					client._nickname = nick;
+					std::cout
+						<< "[DEBUG] Nickname set to: " << nick
+						<< std::endl;
+				}
+				if (strncmp(line, "USER ", 5) == 0) {
+					char* user          = line + 5;
+					client._name        = user;
+					client._isConnected = true;
+					std::cout
+						<< "[DEBUG] Username set to: " << user
+						<< std::endl;
+				}
+				line = strtok(NULL, "\n");
+			}
+			client._isConnected = true;
 		}
-		executeCommand(client,
-					   std::string(buffer, bytesReceived));
+		executeCommand(client, data);
 		// std::string joinCnl
 		// 	= ":Aceauses@localhost JOIN #test\r\n";
 		// send(client.getClientSocket(), joinCnl.c_str(),
@@ -216,6 +239,12 @@ void Server::start() {
 				} else {
 					handleClientData(_clients[i - 1]);
 					// _pollfds[0].revents = 0;
+					std::cout
+						<< "username: " << _clients[i - 1]._name
+						<< std::endl;
+					std::cout << "nickname: "
+							  << _clients[i - 1]._nickname
+							  << std::endl;
 				}
 			}
 		}
