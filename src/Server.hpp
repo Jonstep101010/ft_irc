@@ -46,7 +46,6 @@ private:
 	bool                       _running;
 	int                        _server_socket;
 	int                        _port;
-	time_t                     _last_ping;
 	std::string                _server_ip;
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;

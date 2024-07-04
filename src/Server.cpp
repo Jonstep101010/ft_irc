@@ -11,9 +11,10 @@
 #include <string>
 #include <sys/poll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #define PORT 8080
-#define PING_TIMEOUT 30
+#define PING_INTERVAL 60
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -23,7 +24,6 @@ Server::Server()
 	: _running(true)
 	, _server_socket(-1)
 	, _port(PORT)
-	, _last_ping(time(NULL))
 	, _server_ip("not set") {
 	instance = this;
 }
@@ -32,7 +32,6 @@ Server::Server(const Server& src)
 	: _running()
 	, _server_socket()
 	, _port(PORT)
-	, _last_ping(src._last_ping)
 	, _server_ip("not set") {
 	*this = src;
 }
@@ -120,7 +119,7 @@ std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
 	if (pos != std::string::npos) {
 		std::string cmd = data.std::string::substr(0, pos);
-		std::cout << "Command: " << cmd << std::endl;
+		// std::cout << "Command: " << cmd << std::endl;
 		return cmd;
 	}
 	return "";
@@ -141,7 +140,7 @@ std::string get_after_cmd(std::string data) {
 
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
-	std::cout << "Executing command: " << data << std::endl;
+	// std::cout << "Executing command: " << data << std::endl;
 	if (get_cmd(data) == "JOIN") {
 		std::string after = get_after_cmd(data);
 		if (!after.empty() && after[0] == '#') {
@@ -151,8 +150,8 @@ void Server::executeCommand(Client const&      client,
 				== _channels.end()) {
 				Channel newchannel(channel_name);
 				_channels.push_back(newchannel);
-				std::cout << "Channel created: '" << channel_name
-						  << "'" << std::endl;
+				// std::cout << "Channel created: '" << channel_name
+				// 		  << "'" << std::endl;
 			}
 			std::vector<Channel>::iterator join_channel
 				= Server::findname(channel_name, _channels);
@@ -161,6 +160,43 @@ void Server::executeCommand(Client const&      client,
 			} else {
 				std::cerr << "Channel not found" << std::endl;
 			}
+		}
+	}
+}
+
+void Server::pingClients() {
+	time_t current_time = time(NULL);
+	for (size_t i = 0; i < _clients.size(); i++) {
+		// If it's time to ping this client
+		if (current_time - _clients[i]._last_ping_sent
+			> PING_INTERVAL) {
+			std::string ping_message
+				= PING(_clients[i]._nickname);
+			if (send(_clients[i]._ClientSocket,
+					 ping_message.c_str(), ping_message.size(),
+					 0)
+				< 0) {
+				std::cout << "[ERROR] Sending ping to "
+						  << _clients[i]._nickname << std::endl;
+			} else {
+				if (!_clients[i]._awaiting_pong) {
+					_clients[i]._last_ping_sent = current_time;
+					_clients[i]._awaiting_pong  = true;
+					std::cout << "Sent PING to "
+							  << _clients[i]._nickname
+							  << std::endl;
+				}
+			}
+		}
+
+		// Check if client has timed out
+		if (_clients[i]._awaiting_pong
+			&& current_time - _clients[i]._last_ping_sent
+				   > PING_INTERVAL) {
+			std::cout << "Client " << _clients[i]._nickname
+					  << " timed out" << std::endl;
+			// Disconnect this client
+			i--;
 		}
 	}
 }
@@ -181,6 +217,7 @@ void Server::handleClientData(Client& client) {
 				  << std::endl;
 	} else if (bytesReceived == 0) {
 		// @follow-up NOTE this we still dont know when happens
+		std::cout << "HAPPEND" << std::endl;
 	} else {
 		std::string data = std::string(buffer, bytesReceived);
 		if (!client._isConnected) {
@@ -188,7 +225,7 @@ void Server::handleClientData(Client& client) {
 			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
 			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
 			*/
-			std::cout << "Client init: " << data;
+			std::cout << "Client init: " << data << std::endl;
 			// The first message is NICK, second is USER
 			if (get_cmd(data) == "NICK") {
 				client._nickname = data.substr(5);
@@ -199,6 +236,11 @@ void Server::handleClientData(Client& client) {
 				client._isConnected = true;
 			}
 		} else {
+			if (data.find("PONG") == 0) {
+				client._awaiting_pong = false;
+				std::cout << "Received PONG from "
+						  << client._nickname << std::endl;
+			}
 			executeCommand(client, data);
 		}
 	}

@@ -10,8 +10,9 @@
 		+ "\r\n"
 
 #define WELCOME_MESSAGE                                         \
-	":" + _server_ip + " 001 " + client._name                   \
+	":" + _server_ip + " 001 " + client._nickname               \
 		+ " :Welcome "                                          \
 		  "to the IRC server!\r\n"
 
-#define PING(client_name) "PING " + client_name
+#define PING(client_name)                                       \
+	("PING " + std::string(client_name) + "\r\n")
