@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -182,31 +183,20 @@ void Server::handleClientData(Client& client) {
 				  "to the IRC server!\r\n";
 			send(client._ClientSocket, welcomeMsg.c_str(),
 				 welcomeMsg.length(), 0);
-			// SHOULD BE CHANGED?
-			char* line = strtok(buffer, "\n");
 
-			while (line != NULL) {
-				if (line[strlen(line) - 1] == '\r') {
-					line[strlen(line) - 1] = '\0';
-				}
-				if (strncmp(line, "NICK ", 5) == 0) {
-					char* nick       = line + 5;
-					client._nickname = nick;
-					std::cout
-						<< "[DEBUG] Nickname set to: " << nick
-						<< std::endl;
-				}
-				if (strncmp(line, "USER ", 5) == 0) {
-					char* user          = line + 5;
-					client._name        = user;
-					client._isConnected = true;
-					std::cout
-						<< "[DEBUG] Username set to: " << user
-						<< std::endl;
-				}
-				line = strtok(NULL, "\n");
+			std::string::size_type posNick = data.find("NICK");
+			if (posNick != std::string::npos) {
+				client._nickname
+					= data.substr(posNick, data.length());
+				// Client is set to connected only after the second message recieved:
+				// The first message is NICK, then after NICK is USER, so then we can set the client to connected
 			}
-			client._isConnected = true;
+			std::string::size_type posReal = data.find(':');
+			if (posReal != std::string::npos) {
+				std::string name = data.substr(posReal + 1);
+				client._name = name.substr(0, name.length() - 2);
+				client._isConnected = true;
+			}
 		}
 		executeCommand(client, data);
 		// std::string joinCnl
