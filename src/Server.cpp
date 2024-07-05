@@ -140,48 +140,38 @@ std::string get_after_cmd(std::string data) {
 	return "";
 }
 
-void Server::executeCommand(Client const&      client,
-							std::string const& data) {
-	// std::cout << "Executing command: " << data << std::endl;
-	if (get_cmd(data) == "JOIN") {
-		std::string after = get_after_cmd(data);
-		if (!after.empty() && after[0] == '#') {
-			std::string channel_name = after.substr(
-				1, after.find_first_of("\r\n") - 1);
-			if (Server::findname(channel_name, _channels)
-				== _channels.end()) {
-				Channel newchannel(channel_name);
-				_channels.push_back(newchannel);
-				// std::cout << "Channel created: '" << channel_name
-				// 		  << "'" << std::endl;
-			}
-			std::vector<Channel>::iterator join_channel
-				= Server::findname(channel_name, _channels);
-			if (join_channel != _channels.end()) {
-				join_channel->addUser(client);
-				std::string to_join = ":" + client._nickname
-									+ "!" + client._name + "@"
-									+ client._ip + " JOIN :#"
-									+ channel_name + "\r\n";
-				join_channel->Message(client, to_join);
-			} else {
-				std::cerr << "Channel not found" << std::endl;
-			}
-		}
-		for (std::vector<Channel>::const_iterator channelIt
-			 = _channels.begin();
-			 channelIt != _channels.end(); ++channelIt) {
-			std::cout << "\033[1;34m[CHANNEL]\033[0m "
-					  << channelIt->_name << std::endl;
-			for (std::vector<Client>::const_iterator clientIt
-				 = channelIt->_clients.begin();
-				 clientIt != channelIt->_clients.end();
-				 ++clientIt) {
-				std::cout << "  \033[1;32m[CLIENT]\033[0m "
-						  << client._name << std::endl;
-			}
+void Server::joinChannel(std::string   channel_name,
+						 Client const& client) {
+	if (findname(channel_name, _channels) == _channels.end()) {
+		_channels.push_back(Channel(channel_name));
+	}
+	findname(channel_name, _channels)->addUser(client);
+}
+
+void Server::privmsg(std::string after, Client const& client) {
+	std::string dest = after.substr(0, after.find_first_of(" "));
+	std::string message
+		= after.substr(after.find_first_of(" ") + 2);
+	std::vector<Channel>::iterator dest_channel
+		= Server::findname(dest, _channels);
+	if (dest_channel != _channels.end()) {
+		dest_channel->Message(
+			client,
+			PRIVMSG(client._nickname, client._name, client._ip,
+					dest_channel->_name, message));
+	} else {
+		std::vector<Client>::iterator dest_client
+			= Server::findnickname(dest, _clients);
+		if (dest_client != _clients.end()) {
+			dest_client->Output(PRIVMSG(
+				client._nickname, client._name, client._ip,
+				dest_client->_nickname, message));
 		}
 	}
+}
+
+void Server::executeCommand(Client const&      client,
+							std::string const& data) {
 	if (data == "QUIT" || get_cmd(data) == "QUIT") {
 		// message needs to be broadcastest to the whole channel that he is in.
 		// when no message, then just display <name> client quits to the channel
@@ -208,44 +198,14 @@ void Server::executeCommand(Client const&      client,
 			}
 		}
 	}
+	if (get_cmd(data) == "JOIN" && data[5] == '#') {
+		joinChannel(data.substr(5, data.find_first_of("\r\n")),
+					client);
+	}
 	if (get_cmd(data) == "PRIVMSG") {
 		std::string after = get_after_cmd(data);
 		if (!after.empty()) {
-			std::string channel_or_user_name
-				= after.substr(0, after.find_first_of(" "));
-			std::string channel_name_trimed
-				= channel_or_user_name.substr(
-					1, channel_or_user_name.size());
-			std::cout << "[PRIVMSG TRIMMED]"
-					  << channel_name_trimed << std::endl;
-			std::string message
-				= after.substr(after.find_first_of(" ") + 2);
-			std::vector<Channel>::iterator dest_channel
-				= Server::findname(channel_name_trimed,
-								   _channels);
-			if (dest_channel != _channels.end()) {
-				dest_channel->Message(
-					client,
-					PRIVMSG(
-						client._nickname, client._name,
-						client._ip,
-						std::string("#" + dest_channel->_name),
-						message));
-			} else {
-				std::vector<Client>::iterator dest_client
-					= Server::findnickname(channel_or_user_name,
-										   _clients);
-				if (dest_client != _clients.end()) {
-					dest_client->Output(PRIVMSG(
-						client._nickname, client._name,
-						client._ip, dest_client->_nickname,
-						message));
-				} else {
-					// @todo send error message to client
-					std::cerr << "Destination not found"
-							  << std::endl;
-				}
-			}
+			privmsg(after, client);
 		}
 	}
 }

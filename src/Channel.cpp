@@ -20,6 +20,7 @@ void Channel::addUser(Client const& client) {
 		== _clients.end()) {
 		client.Output(JOINEDREPLY);
 		_clients.push_back(client);
+		Channel::Message(client, JOINED_NOTICE);
 	}
 }
 
