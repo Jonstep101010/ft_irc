@@ -22,7 +22,8 @@ public:
 	~Client() {}
 
 	void Output(std::string const& message) const {
-		std::cout << "[SOCKETS] " << _ClientSocket << std::endl;
+		std::cout << "[SOCKET] Number: " << _ClientSocket
+				  << " With Name: " << _name << std::endl;
 		std::cout << "[MESSAGE OUTPUT] " << message.c_str()
 				  << std::endl;
 		send(_ClientSocket, message.c_str(), message.size(), 0);
