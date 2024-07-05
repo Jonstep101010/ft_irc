@@ -37,7 +37,10 @@ public:
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
 
-	void handleClientData(Client& client);
+	bool handleClientData(Client& client);
+	void handleInitialConnection(Client&            client,
+								 const std::string& message);
+	void processClientBuffer(Client& client);
 
 	void pingClients();
 
@@ -61,6 +64,20 @@ private:
 			 = collection.begin();
 			 it != collection.end(); ++it) {
 			if (it->_name == instance_name) {
+				return it;
+			}
+		}
+		return collection.end();
+	}
+	template <typename Container>
+	typename Container::iterator
+	findnickname(std::string const& instance_name,
+				 Container&         collection) {
+
+		for (typename Container::iterator it
+			 = collection.begin();
+			 it != collection.end(); ++it) {
+			if (it->_nickname == instance_name) {
 				return it;
 			}
 		}

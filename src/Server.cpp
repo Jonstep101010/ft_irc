@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Channel.hpp"
 #include "defines.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
@@ -13,7 +14,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define PORT 8080
+#define PORT 8989
 #define PING_INTERVAL 60
 
 /*
@@ -157,8 +158,53 @@ void Server::executeCommand(Client const&      client,
 				= Server::findname(channel_name, _channels);
 			if (join_channel != _channels.end()) {
 				join_channel->addUser(client);
+				std::string to_join = ":" + client._nickname
+									+ "!" + client._name + "@"
+									+ client._ip + " JOIN :#"
+									+ channel_name + "\r\n";
+				join_channel->Message(client, to_join);
 			} else {
 				std::cerr << "Channel not found" << std::endl;
+			}
+		}
+	}
+	if (get_cmd(data) == "PRIVMSG") {
+		std::string after = get_after_cmd(data);
+		if (!after.empty()) {
+			std::string channel_or_user_name
+				= after.substr(0, after.find_first_of(" "));
+			std::string channel_name_trimed
+				= channel_or_user_name.substr(
+					1, channel_or_user_name.size());
+			std::cout << "[PRIVMSG TRIMMED]"
+					  << channel_name_trimed << std::endl;
+			std::string message
+				= after.substr(after.find_first_of(" ") + 2);
+			std::vector<Channel>::iterator dest_channel
+				= Server::findname(channel_name_trimed,
+								   _channels);
+			if (dest_channel != _channels.end()) {
+				dest_channel->Message(
+					client,
+					PRIVMSG(
+						client._nickname, client._name,
+						client._ip,
+						std::string("#" + dest_channel->_name),
+						message));
+			} else {
+				std::vector<Client>::iterator dest_client
+					= Server::findnickname(channel_or_user_name,
+										   _clients);
+				if (dest_client != _clients.end()) {
+					dest_client->Output(PRIVMSG(
+						client._nickname, client._name,
+						client._ip, dest_client->_nickname,
+						message));
+				} else {
+					// @todo send error message to client
+					std::cerr << "Destination not found"
+							  << std::endl;
+				}
 			}
 		}
 	}
@@ -201,48 +247,63 @@ void Server::pingClients() {
 	}
 }
 
-static void remove_termination(std::string& data) {
-	size_t pos = data.find_first_of("\r\n");
-	if (pos != std::string::npos) {
-		data = data.std::string::substr(0, pos);
-	}
-}
+// static void remove_termination(std::string& data) {
+// 	size_t pos = data.find_first_of("\r\n");
+// 	if (pos != std::string::npos) {
+// 		data = data.std::string::substr(0, pos);
+// 	}
+// }
 
-void Server::handleClientData(Client& client) {
+bool Server::handleClientData(Client& client) {
 	char    buffer[1024];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
+		return false;
 	} else if (bytesReceived == 0) {
-		// @follow-up NOTE this we still dont know when happens
-		std::cout << "HAPPEND" << std::endl;
+		close(client._ClientSocket);
+		return true;
 	} else {
-		std::string data = std::string(buffer, bytesReceived);
+		client._inputBuffer.append(buffer, bytesReceived);
+		processClientBuffer(client);
+		return false;
+	}
+}
+
+void Server::processClientBuffer(Client& client) {
+	size_t pos;
+	while ((pos = client._inputBuffer.find("\r\n"))
+		   != std::string::npos) {
+		std::string message = client._inputBuffer.substr(0, pos);
+		client._inputBuffer.erase(0, pos + 2);
+
+		std::cout << "[DEBUG] " << message << std::endl;
+
 		if (!client._isConnected) {
-			remove_termination(data);
-			/* @note Have to parse the data and set Nickname and Username if the user is first connected to the server 
-			* @todo After you parse and set the nickname and username into the Client class you have to send a welcome message to the client
-			*/
-			std::cout << "Client init: " << data << std::endl;
-			// The first message is NICK, second is USER
-			if (get_cmd(data) == "NICK") {
-				client._nickname = data.substr(5);
-				client.Output(WELCOME_MESSAGE);
-			} else if (get_cmd(data) == "USER") {
-				client._name = data.substr(data.find(':') + 1);
-				// Client is set to connected only after the second message
-				client._isConnected = true;
-			}
+			handleInitialConnection(client, message);
 		} else {
-			if (data.find("PONG") == 0) {
+			if (message.find("PONG") == 0) {
 				client._awaiting_pong = false;
 				std::cout << "Received PONG from "
 						  << client._nickname << std::endl;
+			} else {
+				executeCommand(client, message);
 			}
-			executeCommand(client, data);
 		}
+	}
+}
+
+void Server::handleInitialConnection(
+	Client& client, const std::string& message) {
+	std::cout << "[DEBUG] Client init: " << message << std::endl;
+	if (message.substr(0, 4) == "NICK") {
+		client._nickname = message.substr(5);
+		client.Output(WELCOME_MESSAGE);
+	} else if (message.substr(0, 4) == "USER") {
+		client._name = message.substr(message.find(':') + 1);
+		client._isConnected = true;
 	}
 }
 /*
@@ -268,7 +329,16 @@ void Server::start() {
 				if (_pollfds[i].fd == _server_socket) {
 					acceptConnection(_pollfds[i].fd);
 				} else {
-					handleClientData(_clients[i - 1]);
+					if (handleClientData(_clients[i - 1])) {
+						_clients.erase(_clients.begin()
+									   + (i - 1));
+						_pollfds.erase(_pollfds.begin() + i);
+						std::cout << "[DEBUG] A Client "
+									 "Disconnected "
+								  << "Size of clients: "
+								  << _clients.size()
+								  << std::endl;
+					}
 				}
 			}
 		}
