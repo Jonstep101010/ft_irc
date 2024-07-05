@@ -39,7 +39,8 @@ public:
 	void removeUser(Client const& client);
 
 	// send message to all Clients in channel
-	void Message(std::string const& message);
+	void Message(Client const&      origin,
+				 std::string const& message);
 
 	/// CHANNEL MANAGEMENT ///
 	// set channel topic
@@ -59,4 +60,34 @@ private:
 	bool        _is_invite_only;
 	bool        _topic_protection;
 	std::string _key; // if empty, no key required
+
+	// for finding a channel or client by name, inside any class Server can access
+	template <typename Container>
+	typename Container::iterator
+	findname(std::string const& instance_name,
+			 Container&         collection) {
+
+		for (typename Container::iterator it
+			 = collection.begin();
+			 it != collection.end(); ++it) {
+			if (it->_name == instance_name) {
+				return it;
+			}
+		}
+		return collection.end();
+	}
+	template <typename Container>
+	typename Container::iterator
+	findnickname(std::string const& instance_name,
+				 Container&         collection) {
+
+		for (typename Container::iterator it
+			 = collection.begin();
+			 it != collection.end(); ++it) {
+			if (it->_nickname == instance_name) {
+				return it;
+			}
+		}
+		return collection.end();
+	}
 };
