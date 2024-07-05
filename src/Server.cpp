@@ -73,10 +73,10 @@ void Server::makeSocket() {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
-	struct sockaddr_in _server_addr;
-	_server_addr.sin_family      = AF_INET;
-	_server_addr.sin_addr.s_addr = INADDR_ANY;
-	_server_addr.sin_port        = htons(_port);
+	struct sockaddr_in _server_addr = {};
+	_server_addr.sin_family         = AF_INET;
+	_server_addr.sin_addr.s_addr    = INADDR_ANY;
+	_server_addr.sin_port           = htons(_port);
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
 		< 0) {
@@ -95,7 +95,7 @@ void Server::makeSocket() {
 }
 
 void Server::acceptConnection(int listeningSocket) {
-	sockaddr_in clientAddr;
+	sockaddr_in clientAddr    = {};
 	socklen_t   clientAddrLen = sizeof(clientAddr);
 	int         clientSocket  = accept(
         listeningSocket, (sockaddr*)&clientAddr, &clientAddrLen);
@@ -171,21 +171,41 @@ void Server::executeCommand(Client const&      client,
 				std::cerr << "Channel not found" << std::endl;
 			}
 		}
+		for (std::vector<Channel>::const_iterator channelIt
+			 = _channels.begin();
+			 channelIt != _channels.end(); ++channelIt) {
+			std::cout << "Channel: " << channelIt->_name
+					  << std::endl;
+			for (std::vector<Client>::const_iterator clientIt
+				 = channelIt->_clients.begin();
+				 clientIt != channelIt->_clients.end();
+				 ++clientIt) {
+				std::cout << "  Client: " << clientIt->_name
+						  << std::endl;
+			}
+		}
 	} else if (data == "QUIT\r\n" || get_cmd(data) == "QUIT") {
 
-		// the quit\r\n will quit without any message, get_cmd will also reaceive a message
-		/* 
-		
-		 Example:
+		// message needs to be broadcastest to the whole channel that he is in.
+		// when no message, then just display <name> client quits to the channel
+		if (get_after_cmd(data).empty()) {
+			std::cout << "Client quit" << std::endl;
+		} else {
+			std::cout << "Client quit: " << get_after_cmd(data);
+		}
 
-   		QUIT :Gone to have lunch        ; Preferred message format.
+		// remove user from all channels
+		for (std::vector<Channel>::iterator it
+			 = _channels.begin();
+			 it != _channels.end(); ++it) {
+			it->removeUser(client);
+		}
 
-   		:syrk!kalt@millennium.stealth.net QUIT :Gone to have lunch ; User
-                                   syrk has quit IRC to have lunch.
-		
-		
-		 */
+		// remove user from clients
+		_clients.erase(
+			std::find(_clients.begin(), _clients.end(), client));
 		close(client._ClientSocket);
+		// client._isConnected = false;
 	}
 	if (get_cmd(data) == "PRIVMSG") {
 		std::string after = get_after_cmd(data);
