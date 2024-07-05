@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Channel.hpp"
 #include "defines.hpp"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstddef>
@@ -73,10 +74,10 @@ void Server::makeSocket() {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
-	struct sockaddr_in _server_addr;
-	_server_addr.sin_family      = AF_INET;
-	_server_addr.sin_addr.s_addr = INADDR_ANY;
-	_server_addr.sin_port        = htons(_port);
+	struct sockaddr_in _server_addr = {};
+	_server_addr.sin_family         = AF_INET;
+	_server_addr.sin_addr.s_addr    = INADDR_ANY;
+	_server_addr.sin_port           = htons(_port);
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
 		< 0) {
@@ -95,7 +96,7 @@ void Server::makeSocket() {
 }
 
 void Server::acceptConnection(int listeningSocket) {
-	sockaddr_in clientAddr;
+	sockaddr_in clientAddr    = {};
 	socklen_t   clientAddrLen = sizeof(clientAddr);
 	int         clientSocket  = accept(
         listeningSocket, (sockaddr*)&clientAddr, &clientAddrLen);
@@ -167,6 +168,45 @@ void Server::executeCommand(Client const&      client,
 				std::cerr << "Channel not found" << std::endl;
 			}
 		}
+		for (std::vector<Channel>::const_iterator channelIt
+			 = _channels.begin();
+			 channelIt != _channels.end(); ++channelIt) {
+			std::cout << "\033[1;34m[CHANNEL]\033[0m "
+					  << channelIt->_name << std::endl;
+			for (std::vector<Client>::const_iterator clientIt
+				 = channelIt->_clients.begin();
+				 clientIt != channelIt->_clients.end();
+				 ++clientIt) {
+				std::cout << "  \033[1;32m[CLIENT]\033[0m "
+						  << client._name << std::endl;
+			}
+		}
+	}
+	if (data == "QUIT" || get_cmd(data) == "QUIT") {
+		// message needs to be broadcastest to the whole channel that he is in.
+		// when no message, then just display <name> client quits to the channel
+		// @todo output to channels
+		if (get_after_cmd(data).empty()) {
+			std::cout << "Client quit" << std::endl;
+		} else {
+			std::cout << "Client quit: " << get_after_cmd(data);
+		}
+
+		// remove user from all channels
+		for (std::vector<Channel>::iterator it
+			 = _channels.begin();
+			 it != _channels.end(); ++it) {
+			it->removeUser(client);
+		}
+		// remove user from clients
+		close(client._ClientSocket);
+		_clients.erase(
+			std::find(_clients.begin(), _clients.end(), client));
+		for (size_t i = 0; i < _pollfds.size(); ++i) {
+			if (_pollfds[i].fd == client._ClientSocket) {
+				_pollfds.erase(_pollfds.begin() + i);
+			}
+		}
 	}
 	if (get_cmd(data) == "PRIVMSG") {
 		std::string after = get_after_cmd(data);
@@ -228,9 +268,9 @@ void Server::pingClients() {
 				if (!_clients[i]._awaiting_pong) {
 					_clients[i]._last_ping_sent = current_time;
 					_clients[i]._awaiting_pong  = true;
-					std::cout << "Sent PING to "
-							  << _clients[i]._nickname
-							  << std::endl;
+					std::cout
+						<< "\033[1;33m[PING]\033[0m Sent to "
+						<< _clients[i]._nickname << std::endl;
 				}
 			}
 		}
@@ -254,22 +294,16 @@ void Server::pingClients() {
 // 	}
 // }
 
-bool Server::handleClientData(Client& client) {
+void Server::handleClientData(Client& client) {
 	char    buffer[1024];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
-		return false;
-	} else if (bytesReceived == 0) {
-		close(client._ClientSocket);
-		return true;
-	} else {
-		client._inputBuffer.append(buffer, bytesReceived);
-		processClientBuffer(client);
-		return false;
 	}
+	client._inputBuffer.append(buffer, bytesReceived);
+	processClientBuffer(client);
 }
 
 void Server::processClientBuffer(Client& client) {
@@ -279,15 +313,15 @@ void Server::processClientBuffer(Client& client) {
 		std::string message = client._inputBuffer.substr(0, pos);
 		client._inputBuffer.erase(0, pos + 2);
 
-		std::cout << "[DEBUG] " << message << std::endl;
-
 		if (!client._isConnected) {
 			handleInitialConnection(client, message);
 		} else {
 			if (message.find("PONG") == 0) {
 				client._awaiting_pong = false;
-				std::cout << "Received PONG from "
-						  << client._nickname << std::endl;
+				std::cout
+					<< "\033[1;35m[PONG]\033[0m Received from "
+					<< client._nickname << std::endl;
+
 			} else {
 				executeCommand(client, message);
 			}
@@ -329,16 +363,7 @@ void Server::start() {
 				if (_pollfds[i].fd == _server_socket) {
 					acceptConnection(_pollfds[i].fd);
 				} else {
-					if (handleClientData(_clients[i - 1])) {
-						_clients.erase(_clients.begin()
-									   + (i - 1));
-						_pollfds.erase(_pollfds.begin() + i);
-						std::cout << "[DEBUG] A Client "
-									 "Disconnected "
-								  << "Size of clients: "
-								  << _clients.size()
-								  << std::endl;
-					}
+					handleClientData(_clients[i - 1]);
 				}
 			}
 		}

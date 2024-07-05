@@ -16,19 +16,25 @@ void Server::staticWrapperSignal(int sig) {
 }
 
 void Server::signalHandler(int sig) {
-	(void)sig;
-	std::cout << "Signal Handler Freeing Server" << std::endl;
-	if (_server_socket >= 0) {
-		close(_server_socket);
-		std::cout << "Server socket closed.\n";
-	}
-	for (size_t i = 0; i < _pollfds.size(); ++i) {
-		if (_pollfds[i].fd >= 0) {
-			close(_pollfds[i].fd);
+
+	if (sig == SIGINT) {
+		// fds to close
+		// int fds[] = {27, 23, 22, 20, 18, 0, 1, 2};
+		// for (size_t i = 0; i < sizeof(fds) / sizeof(int); ++i) {
+		// 	close(fds[i]);
+		// }
+
+		// client sockets
+		for (size_t i = 0; i < _pollfds.size(); ++i) {
+			if (_pollfds[i].fd >= 0) {
+				close(_pollfds[i].fd);
+			}
 		}
+
+		// free pollfds
+		_pollfds.clear();
+		_running = false;
 	}
-	_running = false;
-	_pollfds.clear();
 }
 
 int main() {
