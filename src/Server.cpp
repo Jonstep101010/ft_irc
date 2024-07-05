@@ -158,8 +158,7 @@ void Server::privmsg(std::string after, Client const& client) {
 		dest_channel->Message(
 			client,
 			PRIVMSG(client._nickname, client._name, client._ip,
-					std::string("#" + dest_channel->_name),
-					message));
+					dest_channel->_name, message));
 	} else {
 		std::vector<Client>::iterator dest_client
 			= Server::findnickname(dest, _clients);
