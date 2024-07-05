@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Channel.hpp"
 #include "defines.hpp"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstddef>
@@ -14,7 +15,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define PORT 8989
+#define PORT 8080
 #define PING_INTERVAL 60
 
 /*
@@ -180,10 +181,12 @@ void Server::executeCommand(Client const&      client,
 						  << std::endl;
 			}
 		}
-	} else if (data == "QUIT\r\n" || get_cmd(data) == "QUIT") {
-
+	}
+	if (data == "QUIT\r\n" || get_cmd(data) == "QUIT"
+		|| data == "QUIT\r") {
 		// message needs to be broadcastest to the whole channel that he is in.
 		// when no message, then just display <name> client quits to the channel
+		// @todo output to channels
 		if (get_after_cmd(data).empty()) {
 			std::cout << "Client quit" << std::endl;
 		} else {
@@ -198,9 +201,9 @@ void Server::executeCommand(Client const&      client,
 		}
 
 		// remove user from clients
+		close(client._ClientSocket);
 		_clients.erase(
 			std::find(_clients.begin(), _clients.end(), client));
-		close(client._ClientSocket);
 		// client._isConnected = false;
 	}
 	if (get_cmd(data) == "PRIVMSG") {
