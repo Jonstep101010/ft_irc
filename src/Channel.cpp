@@ -1,8 +1,10 @@
 #include "Channel.hpp"
 #include "Server.hpp"
+#include "debug.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <iterator>
+#include <sstream>
 #include <vector>
 
 /*
@@ -41,10 +43,12 @@ void Channel::Message(Client const&      origin,
 					  std::string const& message) {
 	// send message to all users in channel
 	// how to? @follow-up
+	std::ostringstream users;
 	for (size_t i = 0; i < _clients.size(); i++) {
-		std::cout << "[CHANNEL USERS] " << _clients[i]._nickname
-				  << std::endl;
+		users << _clients[i]._nickname << ", ";
 	}
+	debug(CHANNEL, "Channel name: [" + this->_name + "] Users: ["
+					   + users.str() + "]");
 	if (_clients.empty()
 		|| findnickname(origin._nickname, _clients)
 			   == _clients.end()) {
@@ -53,7 +57,8 @@ void Channel::Message(Client const&      origin,
 	for (std::vector<Client>::iterator it = _clients.begin();
 		 it != _clients.end(); it++) {
 		if (*it == origin) {
-			std::cout << "[SKIP] " << it->_name << std::endl;
+			debug(DEBUG, "Didn't send to " + it->_nickname
+							 + " Cause he is origin");
 			continue;
 		}
 		it->Output(message);
