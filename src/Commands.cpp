@@ -18,22 +18,15 @@
 std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
 	if (pos != std::string::npos) {
-		std::string cmd = data.std::string::substr(0, pos);
-		// std::cout << "Command: " << cmd << std::endl;
-		return cmd;
+		return std::string(data.std::string::substr(0, pos));
 	}
 	return "";
 }
 
-// need more checks for invalid input
 std::string get_after_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
 	if (pos != std::string::npos) {
-		std::string after_cmd
-			= data.std::string::substr(pos + 1);
-		std::cout << "After Command: '" << after_cmd << "'"
-				  << std::endl;
-		return after_cmd;
+		return std::string(data.std::string::substr(pos + 1));
 	}
 	return "";
 }
@@ -53,17 +46,12 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::vector<Channel>::iterator dest_channel
 		= Server::find_cnl(dest, _channels);
 	if (dest_channel != _channels.end()) {
-		dest_channel->Message(
-			client,
-			PRIVMSG(client._nickname, client._name, client._ip,
-					dest_channel->_name, message));
+		dest_channel->Message(client, PRIVMSG_CHANNEL);
 	} else {
 		std::vector<Client>::iterator dest_client
 			= Server::findnick(dest, _clients);
 		if (dest_client != _clients.end()) {
-			dest_client->Output(PRIVMSG(
-				client._nickname, client._name, client._ip,
-				dest_client->_nickname, message));
+			dest_client->Output(PRIVMSG_USER);
 		}
 	}
 }
