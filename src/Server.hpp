@@ -29,6 +29,10 @@ public:
 	void joinChannel(std::string   channel_name,
 					 Client const& client);
 
+	// send message to channel or user			 
+	void privmsg(std::string   after_cmd,
+					 Client const& client);
+
 	// leave a channel
 	void leaveChannel(Client const&  client,
 					  Channel const& channel);
