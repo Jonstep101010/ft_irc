@@ -37,7 +37,7 @@ public:
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
 
-	bool handleClientData(Client& client);
+	void handleClientData(Client& client);
 	void handleInitialConnection(Client&            client,
 								 const std::string& message);
 	void processClientBuffer(Client& client);
