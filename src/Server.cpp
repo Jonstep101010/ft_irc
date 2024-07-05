@@ -158,14 +158,10 @@ void Server::executeCommand(Client const&      client,
 				= Server::findname(channel_name, _channels);
 			if (join_channel != _channels.end()) {
 				join_channel->addUser(client);
-				client.Output(":" + client._nickname + "!"
-							  + client._name + "@" + client._ip
-							  + " JOIN :" + channel_name
-							  + "\r\n");
-				std::string to_join
-					= ":" + client._nickname + "!" + client._name
-					+ "@" + client._ip + " JOIN :" + channel_name
-					+ "\r\n";
+				std::string to_join = ":" + client._nickname
+									+ "!" + client._name + "@"
+									+ client._ip + " JOIN :#"
+									+ channel_name + "\r\n";
 				join_channel->Message(client, to_join);
 			} else {
 				std::cerr << "Channel not found" << std::endl;
@@ -177,17 +173,24 @@ void Server::executeCommand(Client const&      client,
 		if (!after.empty()) {
 			std::string channel_or_user_name
 				= after.substr(0, after.find_first_of(" "));
+			std::string channel_name_trimed
+				= channel_or_user_name.substr(
+					1, channel_or_user_name.size());
+			std::cout << "[PRIVMSG TRIMMED]"
+					  << channel_name_trimed << std::endl;
 			std::string message
 				= after.substr(after.find_first_of(" ") + 2);
 			std::vector<Channel>::iterator dest_channel
-				= Server::findname(channel_or_user_name,
+				= Server::findname(channel_name_trimed,
 								   _channels);
 			if (dest_channel != _channels.end()) {
 				dest_channel->Message(
 					client,
-					PRIVMSG(client._nickname, client._name,
-							client._ip, dest_channel->_name,
-							message));
+					PRIVMSG(
+						client._nickname, client._name,
+						client._ip,
+						std::string("#" + dest_channel->_name),
+						message));
 			} else {
 				std::vector<Client>::iterator dest_client
 					= Server::findnickname(channel_or_user_name,

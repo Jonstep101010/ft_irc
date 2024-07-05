@@ -6,7 +6,7 @@
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \
 		+ client._ip /* client ip @note change */ + " JOIN "    \
-		+ _name /* channel name */                              \
+		+ "#" + _name /* channel name */                        \
 		+ "\r\n"
 
 #define WELCOME_MESSAGE                                         \
@@ -31,4 +31,4 @@
 	(":" + std::string(originNick) + "!"                        \
 	 + std::string(originUser) + "@" + std::string(originHost)  \
 	 + " PRIVMSG " + std::string(channel) + " :"                \
-	 + std::string(message))
+	 + std::string(message) + "\r\n")

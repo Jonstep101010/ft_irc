@@ -41,7 +41,7 @@ void Channel::Message(Client const&      origin,
 	// send message to all users in channel
 	// how to? @follow-up
 	for (size_t i = 0; i < _clients.size(); i++) {
-		std::cout << "[MESSAGE] " << _clients[i]._nickname
+		std::cout << "[CHANNEL USERS] " << _clients[i]._nickname
 				  << std::endl;
 	}
 	if (_clients.empty()
@@ -50,8 +50,9 @@ void Channel::Message(Client const&      origin,
 		return;
 	}
 	for (std::vector<Client>::iterator it = _clients.begin();
-		 it != _clients.end(); ++it) {
+		 it != _clients.end(); it++) {
 		if (*it == origin) {
+			std::cout << "[SKIP] " << it->_name << std::endl;
 			continue;
 		}
 		it->Output(message);
