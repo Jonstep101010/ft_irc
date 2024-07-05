@@ -142,13 +142,10 @@ std::string get_after_cmd(std::string data) {
 
 void Server::joinChannel(std::string   channel_name,
 						 Client const& client) {
-	std::vector<Channel>::iterator join_channel
-		= findname(channel_name, _channels);
-	if (join_channel == _channels.end()) {
+	if (findname(channel_name, _channels) == _channels.end()) {
 		_channels.push_back(Channel(channel_name));
-	} else {
-		join_channel->addUser(client);
 	}
+	findname(channel_name, _channels)->addUser(client);
 }
 
 void Server::executeCommand(Client const&      client,
