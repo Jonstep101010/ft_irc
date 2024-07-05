@@ -140,48 +140,19 @@ std::string get_after_cmd(std::string data) {
 	return "";
 }
 
+void Server::joinChannel(std::string   channel_name,
+						 Client const& client) {
+	std::vector<Channel>::iterator join_channel
+		= findname(channel_name, _channels);
+	if (join_channel == _channels.end()) {
+		_channels.push_back(Channel(channel_name));
+	} else {
+		join_channel->addUser(client);
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
-	// std::cout << "Executing command: " << data << std::endl;
-	if (get_cmd(data) == "JOIN") {
-		std::string after = get_after_cmd(data);
-		if (!after.empty() && after[0] == '#') {
-			std::string channel_name = after.substr(
-				1, after.find_first_of("\r\n") - 1);
-			if (Server::findname(channel_name, _channels)
-				== _channels.end()) {
-				Channel newchannel(channel_name);
-				_channels.push_back(newchannel);
-				// std::cout << "Channel created: '" << channel_name
-				// 		  << "'" << std::endl;
-			}
-			std::vector<Channel>::iterator join_channel
-				= Server::findname(channel_name, _channels);
-			if (join_channel != _channels.end()) {
-				join_channel->addUser(client);
-				std::string to_join = ":" + client._nickname
-									+ "!" + client._name + "@"
-									+ client._ip + " JOIN :#"
-									+ channel_name + "\r\n";
-				join_channel->Message(client, to_join);
-			} else {
-				std::cerr << "Channel not found" << std::endl;
-			}
-		}
-		for (std::vector<Channel>::const_iterator channelIt
-			 = _channels.begin();
-			 channelIt != _channels.end(); ++channelIt) {
-			std::cout << "\033[1;34m[CHANNEL]\033[0m "
-					  << channelIt->_name << std::endl;
-			for (std::vector<Client>::const_iterator clientIt
-				 = channelIt->_clients.begin();
-				 clientIt != channelIt->_clients.end();
-				 ++clientIt) {
-				std::cout << "  \033[1;32m[CLIENT]\033[0m "
-						  << client._name << std::endl;
-			}
-		}
-	}
 	if (data == "QUIT" || get_cmd(data) == "QUIT") {
 		// message needs to be broadcastest to the whole channel that he is in.
 		// when no message, then just display <name> client quits to the channel
@@ -207,6 +178,10 @@ void Server::executeCommand(Client const&      client,
 				_pollfds.erase(_pollfds.begin() + i);
 			}
 		}
+	}
+	if (get_cmd(data) == "JOIN" && data[5] == '#') {
+		joinChannel(data.substr(6, data.find_first_of("\r\n")),
+					client);
 	}
 	if (get_cmd(data) == "PRIVMSG") {
 		std::string after = get_after_cmd(data);

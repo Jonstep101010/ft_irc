@@ -26,8 +26,8 @@ public:
 						std::string const& data);
 
 	// join a channel
-	void joinChannel(Client const&  client,
-					 Channel const& channel);
+	void joinChannel(std::string   channel_name,
+					 Client const& client);
 
 	// leave a channel
 	void leaveChannel(Client const&  client,

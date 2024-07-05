@@ -9,6 +9,10 @@
 		+ "#" + _name /* channel name */                        \
 		+ "\r\n"
 
+#define JOINED_NOTICE                                           \
+	":" + client._nickname + "!" + client._name + "@"           \
+		+ client._ip + " JOIN :#" + _name + "\r\n"
+
 #define WELCOME_MESSAGE                                         \
 	":" + _server_ip + " 001 " + client._nickname               \
 		+ " :Welcome "                                          \
