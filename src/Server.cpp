@@ -182,8 +182,7 @@ void Server::executeCommand(Client const&      client,
 			}
 		}
 	}
-	if (data == "QUIT\r\n" || get_cmd(data) == "QUIT"
-		|| data == "QUIT\r") {
+	if (data == "QUIT" || get_cmd(data) == "QUIT") {
 		// message needs to be broadcastest to the whole channel that he is in.
 		// when no message, then just display <name> client quits to the channel
 		// @todo output to channels
@@ -300,14 +299,14 @@ bool Server::handleClientData(Client& client) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
 		return false;
-	} else if (bytesReceived == 0) {
+	}
+	if (bytesReceived == 0) {
 		close(client._ClientSocket);
 		return true;
-	} else {
-		client._inputBuffer.append(buffer, bytesReceived);
-		processClientBuffer(client);
-		return false;
 	}
+	client._inputBuffer.append(buffer, bytesReceived);
+	processClientBuffer(client);
+	return false;
 }
 
 void Server::processClientBuffer(Client& client) {

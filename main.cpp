@@ -19,10 +19,10 @@ void Server::signalHandler(int sig) {
 
 	if (sig == SIGINT) {
 		// fds to close
-		int fds[] = {27, 23, 22, 20, 18, 0, 1, 2};
-		for (size_t i = 0; i < sizeof(fds) / sizeof(int); ++i) {
-			close(fds[i]);
-		}
+		// int fds[] = {27, 23, 22, 20, 18, 0, 1, 2};
+		// for (size_t i = 0; i < sizeof(fds) / sizeof(int); ++i) {
+		// 	close(fds[i]);
+		// }
 
 		// client sockets
 		for (size_t i = 0; i < _pollfds.size(); ++i) {
