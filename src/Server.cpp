@@ -74,10 +74,11 @@ void Server::makeSocket() {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
-	struct sockaddr_in _server_addr = {};
-	_server_addr.sin_family         = AF_INET;
-	_server_addr.sin_addr.s_addr    = INADDR_ANY;
-	_server_addr.sin_port           = htons(_port);
+	struct sockaddr_in _server_addr = {.sin_family = AF_INET,
+									   .sin_port = htons(_port),
+									   .sin_addr = {
+										   .s_addr = INADDR_ANY,
+									   }};
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
 		< 0) {
@@ -87,12 +88,12 @@ void Server::makeSocket() {
 	if (listen(_server_socket, 3) < 0) {
 		std::cerr << "Error listening" << std::endl;
 	}
-	_server_ip            = inet_ntoa(_server_addr.sin_addr);
-	struct pollfd newPool = {};
-	newPool.fd            = _server_socket;
-	newPool.revents       = 0;
-	newPool.events        = POLLIN;
-	_pollfds.push_back(newPool);
+	_server_ip = inet_ntoa(_server_addr.sin_addr);
+	_pollfds.push_back((struct pollfd){
+		.fd      = _server_socket,
+		.events  = POLLIN,
+		.revents = 0,
+	});
 }
 
 void Server::acceptConnection(int listeningSocket) {
@@ -106,7 +107,7 @@ void Server::acceptConnection(int listeningSocket) {
 		return;
 	}
 
-	pollfd newPollFd = {clientSocket, POLLIN, 0};
+	pollfd newPollFd = {clientSocket, 0, POLLIN};
 	_pollfds.push_back(newPollFd);
 
 	// Make a client and add it to the vector

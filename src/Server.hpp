@@ -34,10 +34,6 @@ public:
 	// quit the connection
 	void quit(std::string after_cmd, Client const& client);
 
-	// leave a channel
-	void leaveChannel(Client const&  client,
-					  Channel const& channel);
-
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
