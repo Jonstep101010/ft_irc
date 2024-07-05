@@ -177,7 +177,7 @@ void Server::executeCommand(Client const&      client,
 		}
 	}
 	if (get_cmd(data) == "JOIN" && data[5] == '#') {
-		joinChannel(data.substr(6, data.find_first_of("\r\n")),
+		joinChannel(data.substr(5, data.find_first_of("\r\n")),
 					client);
 	}
 	if (get_cmd(data) == "PRIVMSG") {

@@ -6,12 +6,13 @@
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \
 		+ client._ip /* client ip @note change */ + " JOIN "    \
-		+ "#" + _name /* channel name */                        \
+		+ _name /* (prefix +)channel name */                    \
 		+ "\r\n"
 
 #define JOINED_NOTICE                                           \
 	":" + client._nickname + "!" + client._name + "@"           \
-		+ client._ip + " JOIN :#" + _name + "\r\n"
+		+ client._ip + " JOIN :"                                \
+		+ _name /* (prefix +)channel name */ + "\r\n"
 
 #define WELCOME_MESSAGE                                         \
 	":" + _server_ip + " 001 " + client._nickname               \
