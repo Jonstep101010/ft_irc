@@ -40,10 +40,10 @@ std::string get_after_cmd(std::string data) {
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	if (findname(channel_name, _channels) == _channels.end()) {
+	if (find_cnl(channel_name, _channels) == _channels.end()) {
 		_channels.push_back(Channel(channel_name));
 	}
-	findname(channel_name, _channels)->addUser(client);
+	find_cnl(channel_name, _channels)->addUser(client);
 }
 
 void Server::privmsg(std::string after, Client const& client) {
@@ -51,7 +51,7 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
 	std::vector<Channel>::iterator dest_channel
-		= Server::findname(dest, _channels);
+		= Server::find_cnl(dest, _channels);
 	if (dest_channel != _channels.end()) {
 		dest_channel->Message(
 			client,
@@ -59,7 +59,7 @@ void Server::privmsg(std::string after, Client const& client) {
 					dest_channel->_name, message));
 	} else {
 		std::vector<Client>::iterator dest_client
-			= Server::findnickname(dest, _clients);
+			= Server::findnick(dest, _clients);
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG(
 				client._nickname, client._name, client._ip,

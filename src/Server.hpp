@@ -49,6 +49,37 @@ public:
 
 	void pingClients();
 
+	friend void Channel::Message(Client const&      origin,
+								 std::string const& message);
+
+	static std::vector<Channel>::iterator
+	find_cnl(std::string const&    channel,
+			 std::vector<Channel>& channels) {
+
+		for (std::vector<Channel>::iterator it
+			 = channels.begin();
+			 it != channels.end(); ++it) {
+			if (it->_name == channel) {
+				return it;
+			}
+		}
+		return channels.end();
+	}
+
+	static std::vector<Client>::iterator
+	findnick(std::string const&   instance_name,
+			 std::vector<Client>& collection) {
+
+		for (std::vector<Client>::iterator it
+			 = collection.begin();
+			 it != collection.end(); ++it) {
+			if (it->_nickname == instance_name) {
+				return it;
+			}
+		}
+		return collection.end();
+	}
+
 private:
 	static Server*             instance;
 	bool                       _running;
@@ -58,34 +89,4 @@ private:
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
-
-	// for finding a channel or client by name, inside any class Server can access
-	template <typename Container>
-	typename Container::iterator
-	findname(std::string const& instance_name,
-			 Container&         collection) {
-
-		for (typename Container::iterator it
-			 = collection.begin();
-			 it != collection.end(); ++it) {
-			if (it->_name == instance_name) {
-				return it;
-			}
-		}
-		return collection.end();
-	}
-	template <typename Container>
-	typename Container::iterator
-	findnickname(std::string const& instance_name,
-				 Container&         collection) {
-
-		for (typename Container::iterator it
-			 = collection.begin();
-			 it != collection.end(); ++it) {
-			if (it->_nickname == instance_name) {
-				return it;
-			}
-		}
-		return collection.end();
-	}
 };
