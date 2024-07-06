@@ -77,6 +77,25 @@ void Server::quit(std::string after, Client const& client) {
 	}
 }
 
+std::string get_cnl(std::string data) {
+	size_t pos = data.find_first_of("#&");
+	if (pos != std::string::npos) {
+		size_t end = data.find_first_of(" :", pos);
+		if (end - pos > 1) {
+			return data.substr(pos, end - pos);
+		}
+	}
+	return "";
+}
+
+std::string get_additional(std::string data) {
+	size_t pos = data.find_first_of(" :");
+	if (pos != std::string::npos) {
+		return data.substr(pos);
+	}
+	return "";
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
@@ -84,7 +103,8 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		if (cmd == "JOIN" && after[0] == '#') {
+		if (cmd == "JOIN"
+			&& (after[0] == '#' || after[0] == '&')) {
 			join(after, client);
 		} else if (cmd == "PRIVMSG") {
 			privmsg(after, client);
