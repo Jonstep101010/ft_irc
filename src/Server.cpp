@@ -148,6 +148,28 @@ void Server::joinChannel(std::string   channel_name,
 	findname(channel_name, _channels)->addUser(client);
 }
 
+void Server::privmsg(std::string after, Client const& client) {
+	std::string dest = after.substr(0, after.find_first_of(" "));
+	std::string message
+		= after.substr(after.find_first_of(" ") + 2);
+	std::vector<Channel>::iterator dest_channel
+		= Server::findname(dest, _channels);
+	if (dest_channel != _channels.end()) {
+		dest_channel->Message(
+			client,
+			PRIVMSG(client._nickname, client._name, client._ip,
+					dest_channel->_name, message));
+	} else {
+		std::vector<Client>::iterator dest_client
+			= Server::findnickname(dest, _clients);
+		if (dest_client != _clients.end()) {
+			dest_client->Output(PRIVMSG(
+				client._nickname, client._name, client._ip,
+				dest_client->_nickname, message));
+		}
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	if (data == "QUIT" || get_cmd(data) == "QUIT") {
@@ -183,41 +205,7 @@ void Server::executeCommand(Client const&      client,
 	if (get_cmd(data) == "PRIVMSG") {
 		std::string after = get_after_cmd(data);
 		if (!after.empty()) {
-			std::string channel_or_user_name
-				= after.substr(0, after.find_first_of(" "));
-			std::string channel_name_trimed
-				= channel_or_user_name.substr(
-					1, channel_or_user_name.size());
-			std::cout << "[PRIVMSG TRIMMED]"
-					  << channel_name_trimed << std::endl;
-			std::string message
-				= after.substr(after.find_first_of(" ") + 2);
-			std::vector<Channel>::iterator dest_channel
-				= Server::findname(channel_name_trimed,
-								   _channels);
-			if (dest_channel != _channels.end()) {
-				dest_channel->Message(
-					client,
-					PRIVMSG(
-						client._nickname, client._name,
-						client._ip,
-						std::string("#" + dest_channel->_name),
-						message));
-			} else {
-				std::vector<Client>::iterator dest_client
-					= Server::findnickname(channel_or_user_name,
-										   _clients);
-				if (dest_client != _clients.end()) {
-					dest_client->Output(PRIVMSG(
-						client._nickname, client._name,
-						client._ip, dest_client->_nickname,
-						message));
-				} else {
-					// @todo send error message to client
-					std::cerr << "Destination not found"
-							  << std::endl;
-				}
-			}
+			privmsg(after, client);
 		}
 	}
 }
