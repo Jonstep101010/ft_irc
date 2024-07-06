@@ -14,8 +14,8 @@
 #define BRIGHT_CYAN "\033[96m"
 #define RED_ORANGE "\033[38;2;255;69;0m"
 
-#define SHOW_DEBUG 0
-#define SHOW_SOCKET_INFO 0
+#define SHOW_DEBUG 1
+#define SHOW_SOCKET_INFO 1
 
 // Debug message types
 enum DebugType {

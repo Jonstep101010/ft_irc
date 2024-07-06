@@ -41,6 +41,7 @@ public:
 	void        signalHandler(int sig);
 
 	void handleClientData(Client& client);
+	bool checkIfAlreadyConnected(Client& client);
 	void handleInitialConnection(Client&            client,
 								 const std::string& message);
 	void processClientBuffer(Client& client);

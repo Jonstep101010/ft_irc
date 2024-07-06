@@ -26,7 +26,7 @@ public:
 	void Output(std::string const& message) const {
 		std::ostringstream socketInfo;
 		socketInfo << "Number: " << _ClientSocket
-				   << " With Name: " << _name;
+				   << " With Name: " << _nickname;
 		debug(SOCKET, socketInfo.str());
 		debug(MESSAGE_OUTPUT, message);
 		send(_ClientSocket, message.c_str(), message.size(), 0);
