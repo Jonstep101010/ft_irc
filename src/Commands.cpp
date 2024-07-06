@@ -28,10 +28,12 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
-	std::vector<Channel>::iterator dest_channel
-		= Server::find_cnl(dest, _channels);
-	if (dest_channel != _channels.end()) {
-		dest_channel->Message(client, PRIVMSG_CHANNEL);
+	if (dest[0] == '#' || dest[0] == '&') {
+		std::vector<Channel>::iterator dest_channel
+			= Server::find_cnl(dest, _channels);
+		if (dest_channel != _channels.end()) {
+			dest_channel->Message(client, PRIVMSG_CHANNEL);
+		}
 	} else {
 		std::vector<Client>::iterator dest_client
 			= Server::findnick(dest, _clients);
