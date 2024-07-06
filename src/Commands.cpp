@@ -26,7 +26,8 @@ std::string get_cmd(std::string data) {
 std::string get_after_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
 	if (pos != std::string::npos) {
-		return std::string(data.std::string::substr(pos + 1));
+		return data.std::string::substr(
+			pos + 1, data.find_first_of("\r\n"));
 	}
 	return "";
 }
@@ -81,20 +82,12 @@ void Server::executeCommand(Client const&      client,
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
 	if (data == "QUIT" || cmd == "QUIT") {
-		// message needs to be broadcastest to the whole channel that he is in.
-		// when no message, then just display <name> client quits to the channel
-		// @todo output to channels
 		quit(after, client);
-	}
-	if (!after.empty()) {
+	} else if (!after.empty()) {
 		if (cmd == "JOIN" && after[0] == '#') {
-			join(after.substr(0, after.find_first_of("\r\n")),
-				 client);
-		}
-		if (cmd == "PRIVMSG") {
-			if (!after.empty()) {
-				privmsg(after, client);
-			}
+			join(after, client);
+		} else if (cmd == "PRIVMSG") {
+			privmsg(after, client);
 		}
 	}
 }
