@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
@@ -76,6 +77,33 @@ void Server::quit(std::string after, Client const& client) {
 	}
 }
 
+void Server::part(std::string after, Client const& client) {
+	// Extract channel name
+	std::string channel_name
+		= after.substr(0, after.find_first_of(" "));
+
+	// Find the channel
+	std::vector<Channel>::iterator it
+		= find_cnl(channel_name, _channels);
+	if (it != _channels.end()) {
+
+		// Check if client is part of the channel
+		if (std::find(it->_clients.begin(), it->_clients.end(),
+					  client)
+			!= it->_clients.end()) {
+			it->Message(client, PART_REPLY(client, it->_name));
+			it->removeUser(client);
+		} else {
+			std::cout << "Client " << client._nickname
+					  << " is not part of channel "
+					  << channel_name << std::endl;
+		}
+	} else {
+		std::cout << "Channel " << channel_name << " not found"
+				  << std::endl;
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
@@ -85,6 +113,9 @@ void Server::executeCommand(Client const&      client,
 		// when no message, then just display <name> client quits to the channel
 		// @todo output to channels
 		quit(after, client);
+	}
+	if (cmd == "PART") {
+		part(after, client);
 	}
 	if (!after.empty()) {
 		if (cmd == "JOIN" && after[0] == '#') {

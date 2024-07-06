@@ -15,7 +15,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define PORT 8989
+#define PORT 8080
 #define PING_INTERVAL 60
 
 /*
@@ -107,7 +107,7 @@ void Server::acceptConnection(int listeningSocket) {
 		return;
 	}
 
-	pollfd newPollFd = {clientSocket, 0, POLLIN};
+	pollfd newPollFd = {clientSocket, POLLIN, 0};
 	_pollfds.push_back(newPollFd);
 
 	// Make a client and add it to the vector

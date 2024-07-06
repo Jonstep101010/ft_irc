@@ -50,9 +50,11 @@ void Channel::Message(Client const&      origin,
 			   == _clients.end()) {
 		return;
 	}
+	bool isPartCommand
+		= message == PART_REPLY(origin, this->_name);
 	for (std::vector<Client>::iterator it = _clients.begin();
 		 it != _clients.end(); it++) {
-		if (*it == origin) {
+		if (*it == origin && !isPartCommand) {
 			std::cout << "[SKIP] " << it->_name << std::endl;
 			continue;
 		}

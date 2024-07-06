@@ -37,3 +37,9 @@
 	":" + client._nickname + "!" + client._name + "@"           \
 		+ client._ip + " PRIVMSG " + dest_channel->_name + " :" \
 		+ message + "\r\n"
+
+// :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
+#define PART_REPLY(client, current_channel_name)                \
+	(":" + (client)._nickname + "!" + (client)._name + "@"      \
+	 + (client)._ip + " PART :" + (current_channel_name)        \
+	 + "\r\n")
