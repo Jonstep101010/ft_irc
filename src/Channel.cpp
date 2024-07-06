@@ -46,7 +46,7 @@ void Channel::Message(Client const&      origin,
 				  << std::endl;
 	}
 	if (_clients.empty()
-		|| findnickname(origin._nickname, _clients)
+		|| Server::findnick(origin._nickname, _clients)
 			   == _clients.end()) {
 		return;
 	}

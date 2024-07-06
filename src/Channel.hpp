@@ -50,7 +50,6 @@ public:
 	// @todo add mode specific functions
 
 	friend class Server;
-
 private:
 	const std::string   _name;
 	std::string         _topic;
@@ -61,33 +60,4 @@ private:
 	bool        _topic_protection;
 	std::string _key; // if empty, no key required
 
-	// for finding a channel or client by name, inside any class Server can access
-	template <typename Container>
-	typename Container::iterator
-	findname(std::string const& instance_name,
-			 Container&         collection) {
-
-		for (typename Container::iterator it
-			 = collection.begin();
-			 it != collection.end(); ++it) {
-			if (it->_name == instance_name) {
-				return it;
-			}
-		}
-		return collection.end();
-	}
-	template <typename Container>
-	typename Container::iterator
-	findnickname(std::string const& instance_name,
-				 Container&         collection) {
-
-		for (typename Container::iterator it
-			 = collection.begin();
-			 it != collection.end(); ++it) {
-			if (it->_nickname == instance_name) {
-				return it;
-			}
-		}
-		return collection.end();
-	}
 };
