@@ -1,5 +1,6 @@
 #include "Channel.hpp"
 #include "Server.hpp"
+#include "Utils.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -15,22 +16,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-std::string get_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		return std::string(data.std::string::substr(0, pos));
-	}
-	return "";
-}
-
-std::string get_after_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		return std::string(data.std::string::substr(pos + 1));
-	}
-	return "";
-}
-
 void Server::join(std::string   channel_name,
 				  Client const& client) {
 	if (find_cnl(channel_name, _channels) == _channels.end()) {
@@ -43,10 +28,12 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
-	std::vector<Channel>::iterator dest_channel
-		= Server::find_cnl(dest, _channels);
-	if (dest_channel != _channels.end()) {
-		dest_channel->Message(client, PRIVMSG_CHANNEL);
+	if (dest[0] == '#' || dest[0] == '&') {
+		std::vector<Channel>::iterator dest_channel
+			= Server::find_cnl(dest, _channels);
+		if (dest_channel != _channels.end()) {
+			dest_channel->Message(client, PRIVMSG_CHANNEL);
+		}
 	} else {
 		std::vector<Client>::iterator dest_client
 			= Server::findnick(dest, _clients);
@@ -74,25 +61,6 @@ void Server::quit(std::string after, Client const& client) {
 			_pollfds.erase(_pollfds.begin() + i);
 		}
 	}
-}
-
-std::string get_cnl(std::string data) {
-	size_t pos = data.find_first_of("#");
-	if (pos != std::string::npos) {
-		size_t end = data.find_first_of(" :", pos);
-		if (end - pos > 1) {
-			return data.substr(pos, end - pos);
-		}
-	}
-	return "";
-}
-
-std::string get_additional(std::string data) {
-	size_t pos = data.find_first_of(" :");
-	if (pos != std::string::npos) {
-		return data.substr(pos);
-	}
-	return "";
 }
 
 void Server::topic(std::string after, Client const& client) {
@@ -133,13 +101,13 @@ void Server::executeCommand(Client const&      client,
 	std::string after = get_after_cmd(data);
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
-	} else if (!after.empty()) {
-		if (cmd == "JOIN" && after[0] == '#') {
-			join(after.substr(0, after.find_first_of("\r\n")),
-				 client);
+    } else if (!after.empty()) {
+		if (cmd == "JOIN"
+			&& (after[0] == '#' || after[0] == '&')) {
+			join(after, client);
 		} else if (cmd == "PRIVMSG") {
 			privmsg(after, client);
-		} else if (cmd == "TOPIC" && after[0] == '#') {
+		} else if (cmd == "TOPIC" && (after[0] == '#' || after[0] == '&')) {
 			topic(after.substr(0, after.find_first_of("\r\n")),
 				  client);
 			// @follow-up do this in get_after_cmd?
