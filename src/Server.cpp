@@ -76,10 +76,11 @@ void Server::makeSocket() {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
-	struct sockaddr_in _server_addr = {};
-	_server_addr.sin_family         = AF_INET;
-	_server_addr.sin_addr.s_addr    = INADDR_ANY;
-	_server_addr.sin_port           = htons(_port);
+	struct sockaddr_in _server_addr = {.sin_family = AF_INET,
+									   .sin_port = htons(_port),
+									   .sin_addr = {
+										   .s_addr = INADDR_ANY,
+									   }};
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
 		< 0) {
@@ -89,12 +90,9 @@ void Server::makeSocket() {
 	if (listen(_server_socket, 3) < 0) {
 		std::cerr << "Error listening" << std::endl;
 	}
-	_server_ip            = inet_ntoa(_server_addr.sin_addr);
-	struct pollfd newPool = {};
-	newPool.fd            = _server_socket;
-	newPool.revents       = 0;
-	newPool.events        = POLLIN;
-	_pollfds.push_back(newPool);
+	_server_ip = inet_ntoa(_server_addr.sin_addr);
+	_pollfds.push_back(
+		(struct pollfd){_server_socket, POLLIN, 0});
 }
 
 void Server::acceptConnection(int listeningSocket) {
@@ -117,97 +115,6 @@ void Server::acceptConnection(int listeningSocket) {
 	_clients.push_back(newClient);
 
 	debug(SUCCESS, "New Connection Accepted");
-}
-
-std::string get_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		std::string cmd = data.std::string::substr(0, pos);
-		return cmd;
-	}
-	return "";
-}
-
-// need more checks for invalid input
-std::string get_after_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		std::string after_cmd
-			= data.std::string::substr(pos + 1);
-		debug(DEBUG, "After command: " + after_cmd);
-		return after_cmd;
-	}
-	return "";
-}
-
-void Server::joinChannel(std::string   channel_name,
-						 Client const& client) {
-	if (findname(channel_name, _channels) == _channels.end()) {
-		_channels.push_back(Channel(channel_name));
-	}
-	findname(channel_name, _channels)->addUser(client);
-}
-
-void Server::privmsg(std::string after, Client const& client) {
-	std::string dest = after.substr(0, after.find_first_of(" "));
-	std::string message
-		= after.substr(after.find_first_of(" ") + 2);
-	std::vector<Channel>::iterator dest_channel
-		= Server::findname(dest, _channels);
-	if (dest_channel != _channels.end()) {
-		dest_channel->Message(
-			client,
-			PRIVMSG(client._nickname, client._name, client._ip,
-					dest_channel->_name, message));
-	} else {
-		std::vector<Client>::iterator dest_client
-			= Server::findnickname(dest, _clients);
-		if (dest_client != _clients.end()) {
-			dest_client->Output(PRIVMSG(
-				client._nickname, client._name, client._ip,
-				dest_client->_nickname, message));
-		}
-	}
-}
-
-void Server::executeCommand(Client const&      client,
-							std::string const& data) {
-	if (data == "QUIT" || get_cmd(data) == "QUIT") {
-		// message needs to be broadcastest to the whole channel that he is in.
-		// when no message, then just display <name> client quits to the channel
-		// @todo output to channels
-		if (get_after_cmd(data).empty()) {
-			std::cout << "Client quit" << std::endl;
-		} else {
-			std::cout << "Client quit: " << get_after_cmd(data);
-		}
-
-		// remove user from all channels
-		for (std::vector<Channel>::iterator it
-			 = _channels.begin();
-			 it != _channels.end(); ++it) {
-			it->removeUser(client);
-		}
-		// remove user from clients
-		close(client._ClientSocket);
-		_clients.erase(
-			std::find(_clients.begin(), _clients.end(), client));
-		for (size_t i = 0; i < _pollfds.size(); ++i) {
-			if (_pollfds[i].fd == client._ClientSocket) {
-				_pollfds.erase(_pollfds.begin() + i);
-			}
-		}
-	}
-	if (get_cmd(data) == "JOIN" && data[5] == '#') {
-		joinChannel(data.substr(5, data.find_first_of("\r\n")),
-					client);
-	}
-	if (get_cmd(data) == "PRIVMSG") {
-		std::string after = get_after_cmd(data);
-		if (!after.empty()) {
-			privmsg(after, client);
-		}
-	}
 }
 
 void Server::pingClients() {

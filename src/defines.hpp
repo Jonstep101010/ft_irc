@@ -26,14 +26,14 @@
 // Angel input is:
 // PRIVMSG Wiz :Are you receiving this message ?
 
-// :NickServ!User@ClientHost PRIVMSG #channel_user :message
-// we have test channel, originNick, originUser, originHost
-// :originNick!originUser@originHost PRIVMSG #test :message // #originUser sends message to #test
-
 // :originNick!originUser@originHost PRIVMSG originNick :message // #originUser sends message to originNick
-#define PRIVMSG(originNick, originUser, originHost, channel,    \
-				message)                                        \
-	(":" + std::string(originNick) + "!"                        \
-	 + std::string(originUser) + "@" + std::string(originHost)  \
-	 + " PRIVMSG " + std::string(channel) + " :"                \
-	 + std::string(message) + "\r\n")
+#define PRIVMSG_USER                                            \
+	":" + client._nickname + "!" + client._name + "@"           \
+		+ client._ip + " PRIVMSG " + dest_client->_nickname     \
+		+ " :" + message + "\r\n"
+
+// :originNick!originUser@originHost PRIVMSG #test :message // #originUser sends message to #test
+#define PRIVMSG_CHANNEL                                         \
+	":" + client._nickname + "!" + client._name + "@"           \
+		+ client._ip + " PRIVMSG " + dest_channel->_name + " :" \
+		+ message + "\r\n"

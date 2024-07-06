@@ -50,7 +50,7 @@ void Channel::Message(Client const&      origin,
 	debug(CHANNEL, "Channel name: [" + this->_name + "] Users: ["
 					   + users.str() + "]");
 	if (_clients.empty()
-		|| findnickname(origin._nickname, _clients)
+		|| Server::findnick(origin._nickname, _clients)
 			   == _clients.end()) {
 		return;
 	}
