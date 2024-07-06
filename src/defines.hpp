@@ -37,3 +37,12 @@
 	":" + client._nickname + "!" + client._name + "@"           \
 		+ client._ip + " PRIVMSG " + dest_channel->_name + " :" \
 		+ message + "\r\n"
+
+// topic reply
+#define RPL_NOTOPIC                                             \
+	":" + _server_ip + " 331 " + client._nickname + " "         \
+		+ channel_name + " :No topic is set\r\n"
+
+#define RPL_TOPIC                                               \
+	":" + _server_ip + " 332 " + client._nickname + " "         \
+		+ channel_name + " :" + channel->_topic + "\r\n"
