@@ -107,7 +107,7 @@ void Server::acceptConnection(int listeningSocket) {
 		return;
 	}
 
-	pollfd newPollFd = {clientSocket, 0, POLLIN};
+	pollfd newPollFd = {clientSocket, POLLIN, 0};
 	_pollfds.push_back(newPollFd);
 
 	// Make a client and add it to the vector
