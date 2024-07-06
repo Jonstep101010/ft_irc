@@ -1,6 +1,8 @@
 #pragma once
+#include "debug.hpp"
 #include <ctime>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <sys/socket.h>
 
@@ -22,10 +24,11 @@ public:
 	~Client() {}
 
 	void Output(std::string const& message) const {
-		std::cout << "[SOCKET] Number: " << _ClientSocket
-				  << " With Name: " << _name << std::endl;
-		std::cout << "[MESSAGE OUTPUT] " << message.c_str()
-				  << std::endl;
+		std::ostringstream socketInfo;
+		socketInfo << "Number: " << _ClientSocket
+				   << " With Name: " << _nickname;
+		debug(SOCKET, socketInfo.str());
+		debug(MESSAGE_OUTPUT, message);
 		send(_ClientSocket, message.c_str(), message.size(), 0);
 	}
 

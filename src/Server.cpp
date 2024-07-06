@@ -1,5 +1,7 @@
 #include "Server.hpp"
 #include "Channel.hpp"
+#include "Client.hpp"
+#include "debug.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -10,6 +12,7 @@
 #include <iostream>
 #include <ostream>
 #include <poll.h>
+#include <sstream>
 #include <string>
 #include <sys/poll.h>
 #include <sys/socket.h>
@@ -112,41 +115,45 @@ void Server::acceptConnection(int listeningSocket) {
 	Client      newClient(ip, clientSocket);
 	_clients.push_back(newClient);
 
-	std::cout << "New connection accepted" << std::endl;
+	debug(SUCCESS, "New Connection Accepted");
 }
 
 void Server::pingClients() {
 	time_t current_time = time(NULL);
 	for (size_t i = 0; i < _clients.size(); i++) {
-		// If it's time to ping this client
 		if (current_time - _clients[i]._last_ping_sent
-			> PING_INTERVAL) {
+				> PING_INTERVAL
+			&& !_clients[i]._awaiting_pong) {
 			std::string ping_message
 				= PING(_clients[i]._nickname);
-			if (send(_clients[i]._ClientSocket,
-					 ping_message.c_str(), ping_message.size(),
-					 0)
-				< 0) {
-				std::cout << "[ERROR] Sending ping to "
-						  << _clients[i]._nickname << std::endl;
-			} else {
-				if (!_clients[i]._awaiting_pong) {
-					_clients[i]._last_ping_sent = current_time;
-					_clients[i]._awaiting_pong  = true;
-					std::cout
-						<< "\033[1;33m[PING]\033[0m Sent to "
-						<< _clients[i]._nickname << std::endl;
-				}
-			}
+			_clients[i].Output(ping_message);
+			_clients[i]._last_ping_sent = current_time;
+			_clients[i]._awaiting_pong  = true;
+			debug(PING, "Sent to " + _clients[i]._nickname);
 		}
 
 		// Check if client has timed out
 		if (_clients[i]._awaiting_pong
 			&& current_time - _clients[i]._last_ping_sent
 				   > PING_INTERVAL) {
-			std::cout << "Client " << _clients[i]._nickname
-					  << " timed out" << std::endl;
+			debug(TIMEOUT, "User " + _clients[i]._nickname);
 			// Disconnect this client
+			// @follow-up this needs refactor
+			for (std::vector<Channel>::iterator it
+				 = _channels.begin();
+				 it != _channels.end(); ++it) {
+				it->removeUser(_clients[i]);
+			}
+			// remove user from clients
+			close(_clients[i]._ClientSocket);
+			_clients.erase(std::find(
+				_clients.begin(), _clients.end(), _clients[i]));
+			for (size_t j = 0; j < _pollfds.size(); ++j) {
+				if (_pollfds[j].fd
+					== _clients[i]._ClientSocket) {
+					_pollfds.erase(_pollfds.begin() + j);
+				}
+			}
 			i--;
 		}
 	}
@@ -176,10 +183,7 @@ void Server::processClientBuffer(Client& client) {
 		} else {
 			if (message.find("PONG") == 0) {
 				client._awaiting_pong = false;
-				std::cout
-					<< "\033[1;35m[PONG]\033[0m Received from "
-					<< client._nickname << std::endl;
-
+				debug(PONG, "Received from " + client._nickname);
 			} else {
 				executeCommand(client, message);
 			}
@@ -187,27 +191,57 @@ void Server::processClientBuffer(Client& client) {
 	}
 }
 
+bool Server::checkIfAlreadyConnected(Client& client) {
+	debug(DEBUG,
+		  "Check if there is a already connection with the data "
+			  + client._nickname);
+	for (size_t i = 0; i < _clients.size(); i++) {
+		if (_clients[i]._nickname == client._nickname
+			&& _clients[i]._ClientSocket
+				   != client._ClientSocket) {
+			client.Output(":127.0.0.1 433 * " + client._nickname
+						  + " :Nickname "
+							"is already in use\r\n");
+			debug(WARNING, "Username already in use");
+			return true;
+		}
+	}
+	return false;
+}
+
 void Server::handleInitialConnection(
 	Client& client, const std::string& message) {
-	std::cout << "[DEBUG] Client init: " << message << std::endl;
+	debug(DEBUG, "Init: " + message);
 	if (message.substr(0, 4) == "NICK") {
 		client._nickname = message.substr(5);
-		client.Output(WELCOME_MESSAGE);
+		if (!client._name.empty()
+			&& !checkIfAlreadyConnected(client)) {
+			client._isConnected = true;
+			client.Output(WELCOME_MESSAGE);
+		}
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
+		if (checkIfAlreadyConnected(client))
+			return;
+		client.Output(WELCOME_MESSAGE);
 		client._isConnected = true;
 	}
 }
+
+std::string toString(int value) {
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
 /*
-@follow-up Function which starts the server and will wait for connections
 @remind The user should be able to choose on which port and ip address to start the server
 @note We need to handle signals so when we CTRL + C the server will stop in a clean way
 */
 void Server::start() {
 	makeSocket();
-	std::cout << "Server started on " << _server_ip << ":"
-			  << _port << std::endl;
-	std::cout << "Waiting for connections..." << std::endl;
+	debug(INFO, "Server started on " + _server_ip + ":"
+					+ toString(_port));
+	debug(INFO, "Waiting for connections...");
 	// @follow-up Make the while loop to be until a signal was received
 	while (_running) {
 		// @follow-up Handle poll() and acceptConnection()
@@ -216,7 +250,7 @@ void Server::start() {
 			std::cerr << "Poll error: " << strerror(errno)
 					  << std::endl;
 		}
-		for (size_t i = 0; i < _pollfds.size(); ++i) {
+		for (size_t i = 0; i < _pollfds.size(); i++) {
 			if (_pollfds[i].revents & POLLIN) {
 				if (_pollfds[i].fd == _server_socket) {
 					acceptConnection(_pollfds[i].fd);

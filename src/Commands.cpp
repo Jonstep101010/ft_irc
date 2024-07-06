@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 #include "Server.hpp"
 #include "Utils.hpp"
+#include "debug.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -44,7 +45,7 @@ void Server::privmsg(std::string after, Client const& client) {
 }
 
 void Server::quit(std::string after, Client const& client) {
-	std::cout << "Client quit";
+	debug(CLIENT, "Client Quit");
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels
@@ -101,13 +102,14 @@ void Server::executeCommand(Client const&      client,
 	std::string after = get_after_cmd(data);
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
-    } else if (!after.empty()) {
+	} else if (!after.empty()) {
 		if (cmd == "JOIN"
 			&& (after[0] == '#' || after[0] == '&')) {
 			join(after, client);
 		} else if (cmd == "PRIVMSG") {
 			privmsg(after, client);
-		} else if (cmd == "TOPIC" && (after[0] == '#' || after[0] == '&')) {
+		} else if (cmd == "TOPIC"
+				   && (after[0] == '#' || after[0] == '&')) {
 			topic(after.substr(0, after.find_first_of("\r\n")),
 				  client);
 			// @follow-up do this in get_after_cmd?

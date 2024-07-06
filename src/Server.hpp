@@ -1,7 +1,6 @@
 #pragma once
 #include "Channel.hpp"
 #include "Client.hpp"
-#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 #include <vector>
@@ -42,6 +41,7 @@ public:
 	void        signalHandler(int sig);
 
 	void handleClientData(Client& client);
+	bool checkIfAlreadyConnected(Client& client);
 	void handleInitialConnection(Client&            client,
 								 const std::string& message);
 	void processClientBuffer(Client& client);
