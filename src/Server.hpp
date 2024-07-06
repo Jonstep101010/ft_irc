@@ -33,6 +33,9 @@ public:
 	// quit the connection
 	void quit(std::string after_cmd, Client const& client);
 
+	// topic (set if operator (args), get if not (no args))
+	void topic(std::string after_cmd, Client const& client);
+
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
