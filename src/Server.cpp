@@ -89,11 +89,8 @@ void Server::makeSocket() {
 		std::cerr << "Error listening" << std::endl;
 	}
 	_server_ip = inet_ntoa(_server_addr.sin_addr);
-	_pollfds.push_back((struct pollfd){
-		.fd      = _server_socket,
-		.events  = POLLIN,
-		.revents = 0,
-	});
+	_pollfds.push_back(
+		(struct pollfd){_server_socket, POLLIN, 0});
 }
 
 void Server::acceptConnection(int listeningSocket) {
