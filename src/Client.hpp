@@ -34,7 +34,7 @@ public:
 
 	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
-		return this->_name == other._name;
+		return this->_nickname == other._nickname;
 	}
 
 	friend class Server;

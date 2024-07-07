@@ -150,6 +150,8 @@ void Server::handleClientData(Client& client) {
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
+	} else if (bytesReceived == 0) {
+		this->quit("", client);
 	}
 	client._inputBuffer.append(buffer, bytesReceived);
 	processClientBuffer(client);
