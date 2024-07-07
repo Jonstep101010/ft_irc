@@ -19,10 +19,16 @@
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	if (find_cnl(channel_name, _channels) == _channels.end()) {
-		_channels.push_back(Channel(channel_name));
+	std::vector<Channel>::iterator to_join
+		= find_cnl(channel_name, _channels);
+	if (to_join == _channels.end()) {
+		Channel new_cnl(channel_name);
+		new_cnl.addUser(client);
+		new_cnl._is_operator[0] = true;
+		_channels.push_back(new_cnl);
+	} else {
+		to_join->addUser(client);
 	}
-	find_cnl(channel_name, _channels)->addUser(client);
 }
 
 void Server::privmsg(std::string after, Client const& client) {
@@ -87,6 +93,22 @@ void Server::topic(std::string after, Client const& client) {
 				if (!channel->_topic_protection) {
 					// allow anyone to change the topic
 					channel->setTopic(new_topic);
+				} else {
+					// @follow-up simplify this
+					std::vector<Client>::iterator client_it
+						= std::find(channel->_clients.begin(),
+									channel->_clients.end(),
+									client);
+					if (client_it != channel->_clients.end()) {
+						long client_idx
+							= distance(channel->_clients.begin(),
+									   client_it);
+						if (channel->_is_operator[client_idx]) {
+							channel->setTopic(new_topic);
+						} else {
+							client.Output(ERR_CHANOPRIVSNEEDED);
+						}
+					}
 				}
 			}
 		}

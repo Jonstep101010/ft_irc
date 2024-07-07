@@ -46,3 +46,7 @@
 #define RPL_TOPIC                                               \
 	":" + _server_ip + " 332 " + client._nickname + " "         \
 		+ channel_name + " :" + channel->_topic + "\r\n"
+
+#define ERR_CHANOPRIVSNEEDED                                    \
+	":" + _server_ip + " 482 " + client._nickname + " "         \
+		+ channel_name + " :You're not channel operator\r\n"
