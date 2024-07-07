@@ -84,13 +84,10 @@ void Server::topic(std::string after, Client const& client) {
 			} else {
 				// @todo check if user is operator of the channel
 				// if so, allow it to change the topic
-				new_topic[0] == ' '
-					? new_topic = new_topic.substr(1)
-					: new_topic;
-				new_topic[0] == ':'
-					? new_topic = new_topic.substr(1)
-					: new_topic;
-				channel->_topic = new_topic;
+				if (!channel->_topic_protection) {
+					// allow anyone to change the topic
+					channel->setTopic(new_topic);
+				}
 			}
 		}
 	}
