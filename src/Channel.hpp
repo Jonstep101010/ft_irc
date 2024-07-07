@@ -44,7 +44,7 @@ public:
 
 	/// CHANNEL MANAGEMENT ///
 	// set channel topic
-	void setTopic(std::string const& newtopic);
+	void setTopic(std::string& new_topic);
 	// set mode method (will be directed to member functions)
 	void setMode(std::string const& mode);
 	// @todo add mode specific functions

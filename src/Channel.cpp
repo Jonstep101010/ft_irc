@@ -66,8 +66,12 @@ void Channel::Message(Client const&      origin,
 }
 
 // set channel topic
-void Channel::setTopic(std::string const& newtopic) {
-	_topic = newtopic;
+void Channel::setTopic(std::string& new_topic) {
+	new_topic[0] == ' ' ? new_topic = new_topic.substr(1)
+						: new_topic;
+	new_topic[0] == ':' ? new_topic = new_topic.substr(1)
+						: new_topic;
+	_topic = new_topic;
 }
 
 /*
