@@ -3,7 +3,6 @@
 #include "Client.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
-#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstddef>
@@ -106,14 +105,17 @@ void Server::acceptConnection(int listeningSocket) {
 				  << std::endl;
 		return;
 	}
+	for (size_t i = 0; i < _clients.size(); i++) {
+		if (_clients[i]._ClientSocket == clientSocket) {
+			debug(ERROR, "You are already connected with "
+						 "this socket");
+		}
+	}
 
-	pollfd newPollFd = {clientSocket, POLLIN, 0};
-	_pollfds.push_back(newPollFd);
+	_pollfds.push_back((struct pollfd){clientSocket, POLLIN, 0});
 
-	// Make a client and add it to the vector
 	std::string ip = inet_ntoa(clientAddr.sin_addr);
-	Client      newClient(ip, clientSocket);
-	_clients.push_back(newClient);
+	_clients.push_back(Client(ip, clientSocket));
 
 	debug(SUCCESS, "New Connection Accepted [" + ip + "]");
 }
@@ -150,8 +152,10 @@ void Server::handleClientData(Client& client) {
 	if (bytesReceived == -1) {
 		std::cerr << "Recv error: " << strerror(errno)
 				  << std::endl;
-	} else if (bytesReceived == 0) {
+	}
+	if (bytesReceived == 0) {
 		this->quit("", client);
+		return;
 	}
 	client._inputBuffer.append(buffer, bytesReceived);
 	processClientBuffer(client);
