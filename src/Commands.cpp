@@ -72,13 +72,12 @@ void Server::quit(std::string after, Client const& client) {
 
 void Server::topic(std::string after, Client const& client) {
 	std::string channel_name = get_cnl(after);
-	std::string new_topic
-		= get_additional(after); // @todo skip space and colon
+	std::string new_topic    = get_additional(after);
 	if (!channel_name.empty()) {
 		std::vector<Channel>::iterator channel
 			= find_cnl(channel_name, _channels);
 		if (channel != _channels.end()) {
-			if (new_topic.empty()) {
+			if (new_topic.empty()) {// @follow-up need to be able to delete topic
 				// only single channel is given as argument
 				if (channel != _channels.end()) {
 					if (channel->_topic.empty()) {

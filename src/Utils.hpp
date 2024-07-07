@@ -30,9 +30,12 @@ std::string get_cnl(std::string data) {
 }
 
 std::string get_additional(std::string data) {
-	size_t pos = data.find_first_of(" :");
-	if (pos != std::string::npos) {
-		return data.substr(pos);
+	size_t pos = data.find_first_of(" ");
+	if (pos != 0 && pos != std::string::npos) {
+		pos = data.find_first_not_of(" :", pos);
+		if (pos != std::string::npos && data[pos - 1] == ':') {
+			return data.substr(pos);
+		}
 	}
 	return "";
 }
