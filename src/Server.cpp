@@ -115,7 +115,7 @@ void Server::acceptConnection(int listeningSocket) {
 	Client      newClient(ip, clientSocket);
 	_clients.push_back(newClient);
 
-	debug(SUCCESS, "New Connection Accepted");
+	debug(SUCCESS, "New Connection Accepted [" + ip + "]");
 }
 
 void Server::pingClients() {
@@ -137,23 +137,7 @@ void Server::pingClients() {
 			&& current_time - _clients[i]._last_ping_sent
 				   > PING_INTERVAL) {
 			debug(TIMEOUT, "User " + _clients[i]._nickname);
-			// Disconnect this client
-			// @follow-up this needs refactor
-			for (std::vector<Channel>::iterator it
-				 = _channels.begin();
-				 it != _channels.end(); ++it) {
-				it->removeUser(_clients[i]);
-			}
-			// remove user from clients
-			close(_clients[i]._ClientSocket);
-			_clients.erase(std::find(
-				_clients.begin(), _clients.end(), _clients[i]));
-			for (size_t j = 0; j < _pollfds.size(); ++j) {
-				if (_pollfds[j].fd
-					== _clients[i]._ClientSocket) {
-					_pollfds.erase(_pollfds.begin() + j);
-				}
-			}
+			this->quit("", _clients[i]);
 			i--;
 		}
 	}
@@ -247,8 +231,7 @@ void Server::start() {
 		// @follow-up Handle poll() and acceptConnection()
 		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1
 			&& errno != EINTR) {
-			std::cerr << "Poll error: " << strerror(errno)
-					  << std::endl;
+			debug(ERROR, strerror(errno));
 		}
 		for (size_t i = 0; i < _pollfds.size(); i++) {
 			if (_pollfds[i].revents & POLLIN) {

@@ -45,7 +45,7 @@ void Server::privmsg(std::string after, Client const& client) {
 }
 
 void Server::quit(std::string after, Client const& client) {
-	debug(CLIENT, "Client Quit");
+	debug(CLIENT, "Client Quit [" + client._nickname + "]");
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels

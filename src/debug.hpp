@@ -11,11 +11,22 @@
 #define BLUE "\033[34m"
 #define MAGENTA "\033[35m"
 #define CYAN "\033[36m"
+#define BRIGHT_RED "\033[91m"
+#define BRIGHT_GREEN "\033[92m"
+#define BRIGHT_YELLOW "\033[93m"
+#define BRIGHT_BLUE "\033[94m"
+#define BRIGHT_MAGENTA "\033[95m"
 #define BRIGHT_CYAN "\033[96m"
-#define RED_ORANGE "\033[38;2;255;69;0m"
+#define ORANGE "\033[38;2;255;165;0m"
+#define PINK "\033[38;2;255;192;203m"
+#define PURPLE "\033[38;2;128;0;128m"
+#define TEAL "\033[38;2;0;128;128m"
+#define LIME "\033[38;2;50;205;50m"
+#define ROYAL_BLUE "\033[38;2;65;105;225m"
+#define GOLD "\033[38;2;255;215;0m"
 
-#define SHOW_DEBUG 1
-#define SHOW_SOCKET_INFO 1
+#define SHOW_DEBUG 0
+#define SHOW_SOCKET_INFO 0
 
 // Debug message types
 enum DebugType {
@@ -46,7 +57,7 @@ inline void debug(DebugType type, const std::string& message) {
 	switch (type) {
 	case ERROR:
 		prefix = "[ERROR]";
-		color  = RED;
+		color  = BRIGHT_RED;
 		break;
 	case INFO:
 		prefix = "[INFO]";
@@ -54,43 +65,43 @@ inline void debug(DebugType type, const std::string& message) {
 		break;
 	case WARNING:
 		prefix = "[WARNING]";
-		color  = YELLOW;
+		color  = ORANGE;
 		break;
 	case TIMEOUT:
 		prefix = "[TIMEOUT]";
-		color  = RED_ORANGE;
+		color  = YELLOW;
 		break;
 	case SUCCESS:
 		prefix = "[SUCCESS]";
-		color  = GREEN;
+		color  = BRIGHT_GREEN;
 		break;
 	case PING:
 		prefix = "[PING]";
-		color  = YELLOW;
+		color  = PINK;
 		break;
 	case SOCKET:
 		prefix = "[SOCKET]";
-		color  = BLUE;
+		color  = ROYAL_BLUE;
 		break;
 	case MESSAGE_OUTPUT:
 		prefix = "[MESSAGE OUTPUT]";
-		color  = MAGENTA;
+		color  = PURPLE;
 		break;
 	case PONG:
 		prefix = "[PONG]";
-		color  = MAGENTA;
+		color  = BRIGHT_MAGENTA;
 		break;
 	case CHANNEL:
 		prefix = "[CHANNEL]";
-		color  = BLUE;
+		color  = TEAL;
 		break;
 	case CLIENT:
 		prefix = "[CLIENT]";
-		color  = GREEN;
+		color  = LIME;
 		break;
 	case DEBUG:
 		prefix = "[DEBUG]";
-		color  = BRIGHT_CYAN;
+		color  = GOLD;
 		break;
 	default:
 		prefix = "[UNKNOWN]";
