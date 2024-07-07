@@ -122,16 +122,12 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		if (cmd == "JOIN"
-			&& (after[0] == '#' || after[0] == '&')) {
-			join(after, client);
-		} else if (cmd == "PRIVMSG") {
+		if (cmd == "PRIVMSG") {
 			privmsg(after, client);
-		} else if (cmd == "TOPIC"
-				   && (after[0] == '#' || after[0] == '&')) {
-			topic(after.substr(0, after.find_first_of("\r\n")),
-				  client);
-			// @follow-up do this in get_after_cmd?
+		} else if (after[0] == '#' || after[0] == '&') {
+			cmd == "JOIN"    ? join(after, client)
+			: cmd == "TOPIC" ? topic(after, client)
+							 : void();
 		}
 	}
 }
