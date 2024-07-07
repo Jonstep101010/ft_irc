@@ -79,34 +79,13 @@ void Server::topic(std::string after, Client const& client) {
 	if (new_topic.empty()
 		&& after[after.find_first_of(" ") + 1] != ':') {
 		// only single channel is given as argument, possible postfix of space
-		if (channel != _channels.end()) {
-			if (channel->_topic.empty()) {
-				client.Output(RPL_NOTOPIC);
-			} else {
-				client.Output(RPL_TOPIC);
-			}
-		}
+		channel->_topic.empty() ? client.Output(RPL_NOTOPIC)
+								: client.Output(RPL_TOPIC);
 	} else {
-		// @todo check if user is operator of the channel
-		// if so, allow it to change the topic
-		if (!channel->_topic_protection) {
-			// allow anyone to change the topic
-			channel->setTopic(new_topic);
-		} else {
-			// @follow-up simplify this
-			std::vector<Client>::iterator client_it
-				= std::find(channel->_clients.begin(),
-							channel->_clients.end(), client);
-			if (client_it != channel->_clients.end()) {
-				long client_idx = distance(
-					channel->_clients.begin(), client_it);
-				if (channel->_is_operator[client_idx]) {
-					channel->setTopic(new_topic);
-				} else {
-					client.Output(ERR_CHANOPRIVSNEEDED);
-				}
-			}
-		}
+		!channel->_topic_protection
+				|| channel->is_operator(client)
+			? channel->setTopic(new_topic)
+			: client.Output(ERR_CHANOPRIVSNEEDED);
 	}
 }
 
