@@ -80,6 +80,18 @@ private:
 			return element.first == targetClient;
 		}
 	};
+	class CompareOperator {
+		const bool target_op;
+
+	public:
+		CompareOperator(const bool is_op)
+			: target_op(is_op) {}
+
+		bool operator()(
+			const std::pair<Client, bool>& element) const {
+			return element.second == target_op;
+		}
+	};
 
 #include "defines.hpp"
 	ClientOpIt findnick(std::string const& client_nick) {

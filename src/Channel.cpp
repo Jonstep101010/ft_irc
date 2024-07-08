@@ -39,6 +39,15 @@ void Channel::removeUser(Client const& client) {
 
 	if (toRemove != _clients_op.end()) {
 		_clients_op.erase(toRemove);
+		// make everyone operator if last one left
+		if (std::find_if(_clients_op.begin(), _clients_op.end(),
+						 CompareOperator(true))
+			== _clients_op.end()) {
+			for (ClientOpIt it = _clients_op.begin();
+				 it != _clients_op.end(); it++) {
+				it->second = true;
+			}
+		}
 	}
 }
 
