@@ -35,6 +35,8 @@ void Channel::removeUser(Client const& client) {
 		= std::find(_clients.begin(), _clients.end(), client);
 
 	if (toRemove != _clients.end()) {
+		_is_operator.erase(_is_operator.begin()
+						   + (toRemove - _clients.begin()));
 		_clients.erase(toRemove);
 	}
 }
