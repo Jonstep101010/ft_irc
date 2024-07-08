@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+typedef enum e_mode_op {
+	ADD = '+',
+	RM  = '-',
+} MODE_OP;
+
 class Client;
 
 class Channel {
@@ -56,8 +61,19 @@ public:
 	// set channel topic
 	void setTopic(std::string& new_topic);
 	// set mode method (will be directed to member functions)
+	// @follow-up remove this/move ::mode here?
 	void setMode(std::string const& mode);
 	// @todo add mode specific functions
+
+	void chmod_op(MODE_OP change, std::string const& nick) {
+		ClientOpIt it = findnick(nick);
+		if (it != _clients_op.end()) {
+			// handle already given?
+			it->second = (change == ADD);
+		} else {
+			// some handling (client not on channel)
+		}
+	}
 
 	friend class Server;
 

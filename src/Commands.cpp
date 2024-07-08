@@ -3,6 +3,7 @@
 #include "Utils.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cstddef>
@@ -89,6 +90,72 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
+typedef enum e_modes {
+	INV_ONLY      = 'i',
+	KEY_SET       = 'k',
+	OP_PERM       = 'o',
+	TOPIC_PROTECT = 't',
+} MODES;
+
+typedef struct t_setmode {
+	MODES   to_mod;
+	MODE_OP op_todo;
+} MODE_SET;
+
+std::string get_additional_mode(std::string data) {
+	size_t pos = data.find_first_of(" ");
+	if (pos != 0 && pos != std::string::npos) {
+		pos = data.find_first_not_of(" ", pos);
+		if (pos != std::string::npos) {
+			return data.substr(pos);
+		}
+	}
+	return "";
+}
+
+void Server::mode(std::string after, Client const& client) {
+	const std::string channel_name = get_cnl(after);
+	std::string       after_cnl    = get_additional_mode(after);
+	// @note handle error
+	if (after_cnl.empty()) { return; }
+	std::vector<Channel>::iterator channel
+		= find_cnl(channel_name, _channels);
+	// @todo handle error, channel not existing, user not being member,...
+	if (!channel->is_operator(client)) { return; }
+	// @note priviledged access
+	MODE_SET change_req;
+	// @follow-up more sophisticated parsing/checking
+	// @todo handle error
+	if ((after_cnl[0] != ADD && after_cnl[0] != RM)
+		|| !strchr("ikot", after_cnl[1])
+		|| after_cnl[2] != ' ') {
+		return;
+	}
+	change_req.op_todo
+		= static_cast<MODE_OP>(static_cast<int>(after_cnl[0]));
+	change_req.to_mod
+		= static_cast<MODES>(static_cast<int>(after_cnl[1]));
+
+	switch (change_req.to_mod) {
+	case INV_ONLY: {
+	}
+	case KEY_SET: {
+	}
+	case OP_PERM: {
+
+		size_t      pos = after_cnl.find_first_not_of("+-ikot ");
+		std::string to_grant = after_cnl.std::string::substr(
+			pos, after_cnl.find_first_of(" ", pos));
+		if (!to_grant.empty()) {
+			channel->chmod_op(change_req.op_todo, to_grant);
+		}
+		// @follow-up
+	}
+	case TOPIC_PROTECT: {
+	}
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
@@ -101,6 +168,7 @@ void Server::executeCommand(Client const&      client,
 		} else if (after[0] == '#' || after[0] == '&') {
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
+			: cmd == "MODE"  ? mode(after, client)
 							 : void();
 		}
 	}
