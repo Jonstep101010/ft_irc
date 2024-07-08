@@ -51,4 +51,5 @@
 	":" + _server_ip + " 482 " + client._nickname + " "         \
 		+ channel_name + " :You're not channel operator\r\n"
 // clang-format off
-typedef std::vector<std::pair<Client, bool> >::iterator ClientBoolIt;
+typedef std::vector<std::pair<Client, bool> >::iterator ClientOpIt;
+typedef std::vector<std::pair<Client, bool> > ClientOp;

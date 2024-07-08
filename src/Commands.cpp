@@ -24,7 +24,7 @@ void Server::join(std::string   channel_name,
 	if (to_join == _channels.end()) {
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
-		new_cnl._is_operator[0] = true;
+		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
 		to_join->addUser(client);

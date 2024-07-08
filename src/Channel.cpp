@@ -18,7 +18,7 @@
 // add user to channel
 // @follow-up handle modes, Client already joined, limit reached
 void Channel::addUser(const Client& client) {
-	ClientBoolIt it
+	ClientOpIt it
 		= std::find_if(_clients_op.begin(), _clients_op.end(),
 					   CompareClient(client));
 
@@ -33,13 +33,12 @@ void Channel::addUser(const Client& client) {
 void Channel::removeUser(Client const& client) {
 	// find user
 	// if found, remove user from channel
-	std::vector<Client>::iterator toRemove
-		= std::find(_clients.begin(), _clients.end(), client);
+	ClientOpIt toRemove
+		= std::find_if(_clients_op.begin(), _clients_op.end(),
+					   CompareClient(client));
 
-	if (toRemove != _clients.end()) {
-		_is_operator.erase(_is_operator.begin()
-						   + (toRemove - _clients.begin()));
-		_clients.erase(toRemove);
+	if (toRemove != _clients_op.end()) {
+		_clients_op.erase(toRemove);
 	}
 }
 
@@ -48,25 +47,24 @@ void Channel::Message(Client const&      origin,
 					  std::string const& message) {
 	// send message to all users in channel
 	// how to? @follow-up
+	if (_clients_op.empty()) { return; }
 	std::ostringstream users;
-	for (size_t i = 0; i < _clients.size(); i++) {
-		users << _clients[i]._nickname << ", ";
+	for (size_t i = 0; i < _clients_op.size(); i++) {
+		users << _clients_op[i].first._nickname << ", ";
 	}
 	debug(CHANNEL, "Channel name: [" + this->_name + "] Users: ["
 					   + users.str() + "]");
-	if (_clients.empty()
-		|| Server::findnick(origin._nickname, _clients)
-			   == _clients.end()) {
+	if (findnick(origin._nickname) == _clients_op.end()) {
 		return;
 	}
-	for (std::vector<Client>::iterator it = _clients.begin();
-		 it != _clients.end(); it++) {
-		if (*it == origin) {
-			debug(DEBUG, "Didn't send to " + it->_nickname
+	for (ClientOpIt it = _clients_op.begin();
+		 it != _clients_op.end(); it++) {
+		if (it->first == origin) {
+			debug(DEBUG, "Didn't send to " + it->first._nickname
 							 + " Cause he is origin");
 			continue;
 		}
-		it->Output(message);
+		it->first.Output(message);
 	}
 }
 
