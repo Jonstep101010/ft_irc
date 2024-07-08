@@ -31,6 +31,14 @@ Server::Server()
 	, _server_ip("not set") {
 	instance = this;
 }
+Server::Server(int port, std::string password)
+	: _running(true)
+	, _server_socket(-1)
+	, _port(port)
+	, _server_ip("not set")
+	, _server_pass(password) {
+	instance = this;
+}
 
 Server::Server(const Server& src)
 	: _running()
@@ -197,10 +205,27 @@ bool Server::checkIfAlreadyConnected(Client& client) {
 	return false;
 }
 
+void Server::handlePassCommand(Client&     client,
+							   std::string password) {
+	if (password == _server_pass) {
+		debug(CLIENT, "Password correct");
+	} else if (password.empty()) {
+		client.Output(ERR_NEEDMOREPARAMS);
+	} else {
+		client.Output(ERR_PASSWDMISMATCH);
+		this->quit("", client);
+	}
+}
+
 void Server::handleInitialConnection(
 	Client& client, const std::string& message) {
 	debug(DEBUG, "Init: " + message);
-	if (message.substr(0, 4) == "NICK") {
+	if (message.substr(0, 4) == "PASS"
+		&& !this->_server_pass.empty()) {
+		debug(CLIENT, "Verifying password");
+		std::string password = message.substr(5);
+		handlePassCommand(client, password);
+	} else if (message.substr(0, 4) == "NICK") {
 		client._nickname = message.substr(5);
 		if (!client._name.empty()
 			&& !checkIfAlreadyConnected(client)) {
@@ -209,7 +234,7 @@ void Server::handleInitialConnection(
 		}
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
-		if (checkIfAlreadyConnected(client)) return;
+		if (checkIfAlreadyConnected(client)) { return; }
 		client.Output(WELCOME_MESSAGE);
 		client._isConnected = true;
 	}
