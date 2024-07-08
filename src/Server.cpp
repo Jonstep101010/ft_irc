@@ -46,9 +46,7 @@ Server::Server(const Server& src)
 */
 
 Server::~Server() {
-	if (_server_socket >= 0) {
-		close(_server_socket);
-	}
+	if (_server_socket >= 0) { close(_server_socket); }
 }
 
 /*
@@ -207,8 +205,7 @@ void Server::handleInitialConnection(
 		}
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
-		if (checkIfAlreadyConnected(client))
-			return;
+		if (checkIfAlreadyConnected(client)) return;
 		client.Output(WELCOME_MESSAGE);
 		client._isConnected = true;
 	}

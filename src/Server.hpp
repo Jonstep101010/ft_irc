@@ -58,9 +58,7 @@ public:
 		for (std::vector<Channel>::iterator it
 			 = channels.begin();
 			 it != channels.end(); ++it) {
-			if (it->_name == channel) {
-				return it;
-			}
+			if (it->_name == channel) { return it; }
 		}
 		return channels.end();
 	}
@@ -72,9 +70,7 @@ public:
 		for (std::vector<Client>::iterator it
 			 = collection.begin();
 			 it != collection.end(); ++it) {
-			if (it->_nickname == instance_name) {
-				return it;
-			}
+			if (it->_nickname == instance_name) { return it; }
 		}
 		return collection.end();
 	}

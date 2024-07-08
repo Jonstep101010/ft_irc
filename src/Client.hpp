@@ -18,7 +18,6 @@ public:
 		: _ip(ip)
 		, _ClientSocket(socket)
 		, _isConnected()
-		, _isServerOperator(false)
 		, _last_ping_sent(time(NULL))
 		, _awaiting_pong(false) {}
 	~Client() {}
@@ -47,7 +46,6 @@ private:
 	std::string _name;
 	std::string _nickname;
 	bool        _isConnected;
-	bool        _isServerOperator;
 	time_t      _last_ping_sent;
 	bool        _awaiting_pong;
 };

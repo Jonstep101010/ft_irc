@@ -19,10 +19,16 @@
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	if (find_cnl(channel_name, _channels) == _channels.end()) {
-		_channels.push_back(Channel(channel_name));
+	std::vector<Channel>::iterator to_join
+		= find_cnl(channel_name, _channels);
+	if (to_join == _channels.end()) {
+		Channel new_cnl(channel_name);
+		new_cnl.addUser(client);
+		new_cnl._is_operator[0] = true;
+		_channels.push_back(new_cnl);
+	} else {
+		to_join->addUser(client);
 	}
-	find_cnl(channel_name, _channels)->addUser(client);
 }
 
 void Server::privmsg(std::string after, Client const& client) {
@@ -65,34 +71,21 @@ void Server::quit(std::string after, Client const& client) {
 }
 
 void Server::topic(std::string after, Client const& client) {
-	std::string channel_name = get_cnl(after);
-	std::string new_topic
-		= get_additional(after); // @todo skip space and colon
-	if (!channel_name.empty()) {
-		std::vector<Channel>::iterator channel
-			= find_cnl(channel_name, _channels);
-		if (channel != _channels.end()) {
-			if (new_topic.empty()) {
-				// only single channel is given as argument
-				if (channel != _channels.end()) {
-					if (channel->_topic.empty()) {
-						client.Output(RPL_NOTOPIC);
-					} else {
-						client.Output(RPL_TOPIC);
-					}
-				}
-			} else {
-				// @todo check if user is operator of the channel
-				// if so, allow it to change the topic
-				new_topic[0] == ' '
-					? new_topic = new_topic.substr(1)
-					: new_topic;
-				new_topic[0] == ':'
-					? new_topic = new_topic.substr(1)
-					: new_topic;
-				channel->_topic = new_topic;
-			}
-		}
+	const std::string              channel_name = get_cnl(after);
+	std::vector<Channel>::iterator channel
+		= find_cnl(channel_name, _channels);
+	if (channel == _channels.end()) { return; }
+	std::string new_topic = get_additional(after);
+	if (new_topic.empty()
+		&& after[after.find_first_of(" ") + 1] != ':') {
+		// only single channel is given as argument, possible postfix of space
+		channel->_topic.empty() ? client.Output(RPL_NOTOPIC)
+								: client.Output(RPL_TOPIC);
+	} else {
+		!channel->_topic_protection
+				|| channel->is_operator(client)
+			? channel->setTopic(new_topic)
+			: client.Output(ERR_CHANOPRIVSNEEDED);
 	}
 }
 
@@ -103,16 +96,12 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		if (cmd == "JOIN"
-			&& (after[0] == '#' || after[0] == '&')) {
-			join(after, client);
-		} else if (cmd == "PRIVMSG") {
+		if (cmd == "PRIVMSG") {
 			privmsg(after, client);
-		} else if (cmd == "TOPIC"
-				   && (after[0] == '#' || after[0] == '&')) {
-			topic(after.substr(0, after.find_first_of("\r\n")),
-				  client);
-			// @follow-up do this in get_after_cmd?
+		} else if (after[0] == '#' || after[0] == '&') {
+			cmd == "JOIN"    ? join(after, client)
+			: cmd == "TOPIC" ? topic(after, client)
+							 : void();
 		}
 	}
 }

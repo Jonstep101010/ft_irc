@@ -1,5 +1,6 @@
 #pragma once
 #include "Client.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,6 +33,17 @@ public:
 		return this->_name == other._name;
 	}
 
+	bool is_operator(Client const& client) {
+		std::vector<Client>::iterator it = std::find(
+			_clients.begin(), _clients.end(), client);
+		if (it != _clients.end()) {
+			return _is_operator[it - _clients.begin()];
+		}
+		return false;
+	}
+
+	// @follow-up add method to get a mutable reference to a Client operator status
+
 	/// USER MANAGEMENT ///
 	// add user to channel
 	void addUser(Client const& client);
@@ -44,12 +56,13 @@ public:
 
 	/// CHANNEL MANAGEMENT ///
 	// set channel topic
-	void setTopic(std::string const& newtopic);
+	void setTopic(std::string& new_topic);
 	// set mode method (will be directed to member functions)
 	void setMode(std::string const& mode);
 	// @todo add mode specific functions
 
 	friend class Server;
+
 private:
 	const std::string   _name;
 	std::string         _topic;
@@ -59,5 +72,4 @@ private:
 	bool        _is_invite_only;
 	bool        _topic_protection;
 	std::string _key; // if empty, no key required
-
 };
