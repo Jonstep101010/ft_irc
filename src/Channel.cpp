@@ -17,12 +17,14 @@
 
 // add user to channel
 // @follow-up handle modes, Client already joined, limit reached
-void Channel::addUser(Client const& client) {
-	if (std::find(_clients.begin(), _clients.end(), client)
-		== _clients.end()) {
+void Channel::addUser(const Client& client) {
+	ClientOpIt it
+		= std::find_if(_clients_op.begin(), _clients_op.end(),
+					   CompareClient(client));
+
+	if (it == _clients_op.end()) {
 		client.Output(JOINEDREPLY);
-		_clients.push_back(client);
-		_is_operator.push_back(false);
+		_clients_op.push_back(std::make_pair(client, false));
 		Channel::Message(client, JOINED_NOTICE);
 	}
 }
@@ -31,13 +33,21 @@ void Channel::addUser(Client const& client) {
 void Channel::removeUser(Client const& client) {
 	// find user
 	// if found, remove user from channel
-	std::vector<Client>::iterator toRemove
-		= std::find(_clients.begin(), _clients.end(), client);
+	ClientOpIt toRemove
+		= std::find_if(_clients_op.begin(), _clients_op.end(),
+					   CompareClient(client));
 
-	if (toRemove != _clients.end()) {
-		_is_operator.erase(_is_operator.begin()
-						   + (toRemove - _clients.begin()));
-		_clients.erase(toRemove);
+	if (toRemove != _clients_op.end()) {
+		_clients_op.erase(toRemove);
+		// make everyone operator if last one left
+		if (std::find_if(_clients_op.begin(), _clients_op.end(),
+						 CompareOperator(true))
+			== _clients_op.end()) {
+			for (ClientOpIt it = _clients_op.begin();
+				 it != _clients_op.end(); it++) {
+				it->second = true;
+			}
+		}
 	}
 }
 
@@ -46,25 +56,24 @@ void Channel::Message(Client const&      origin,
 					  std::string const& message) {
 	// send message to all users in channel
 	// how to? @follow-up
+	if (_clients_op.empty()) { return; }
 	std::ostringstream users;
-	for (size_t i = 0; i < _clients.size(); i++) {
-		users << _clients[i]._nickname << ", ";
+	for (size_t i = 0; i < _clients_op.size(); i++) {
+		users << _clients_op[i].first._nickname << ", ";
 	}
 	debug(CHANNEL, "Channel name: [" + this->_name + "] Users: ["
 					   + users.str() + "]");
-	if (_clients.empty()
-		|| Server::findnick(origin._nickname, _clients)
-			   == _clients.end()) {
+	if (findnick(origin._nickname) == _clients_op.end()) {
 		return;
 	}
-	for (std::vector<Client>::iterator it = _clients.begin();
-		 it != _clients.end(); it++) {
-		if (*it == origin) {
-			debug(DEBUG, "Didn't send to " + it->_nickname
+	for (ClientOpIt it = _clients_op.begin();
+		 it != _clients_op.end(); it++) {
+		if (it->first == origin) {
+			debug(DEBUG, "Didn't send to " + it->first._nickname
 							 + " Cause he is origin");
 			continue;
 		}
-		it->Output(message);
+		it->first.Output(message);
 	}
 }
 

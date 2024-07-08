@@ -22,8 +22,7 @@ public:
 	Channel(const Channel& src)
 		: _name(src._name)
 		, _topic(src._topic)
-		, _clients(src._clients)
-		, _is_operator(src._is_operator)
+		, _clients_op(src._clients_op)
 		, _is_invite_only(src._is_invite_only)
 		, _topic_protection(src._topic_protection)
 		, _key(src._key) {}
@@ -34,11 +33,10 @@ public:
 	}
 
 	bool is_operator(Client const& client) {
-		std::vector<Client>::iterator it = std::find(
-			_clients.begin(), _clients.end(), client);
-		if (it != _clients.end()) {
-			return _is_operator[it - _clients.begin()];
-		}
+		ClientOpIt it = std::find_if(_clients_op.begin(),
+									 _clients_op.end(),
+									 CompareClient(client));
+		if (it != _clients_op.end()) { return it->second; }
 		return false;
 	}
 
@@ -64,10 +62,47 @@ public:
 	friend class Server;
 
 private:
-	const std::string   _name;
-	std::string         _topic;
-	std::vector<Client> _clients;
-	std::vector<bool>   _is_operator;
+	const std::string _name;
+	std::string       _topic;
+	// clang-format off
+	std::vector<std::pair<Client, bool> > _clients_op;
+	// clang-format on
+
+	class CompareClient {
+		const Client& targetClient;
+
+	public:
+		CompareClient(const Client& client)
+			: targetClient(client) {}
+
+		bool operator()(
+			const std::pair<Client, bool>& element) const {
+			return element.first == targetClient;
+		}
+	};
+	class CompareOperator {
+		const bool target_op;
+
+	public:
+		CompareOperator(const bool is_op)
+			: target_op(is_op) {}
+
+		bool operator()(
+			const std::pair<Client, bool>& element) const {
+			return element.second == target_op;
+		}
+	};
+
+#include "defines.hpp"
+	ClientOpIt findnick(std::string const& client_nick) {
+		for (ClientOpIt it = _clients_op.begin();
+			 it != _clients_op.end(); ++it) {
+			if (it->first._nickname == client_nick) {
+				return it;
+			}
+		}
+		return _clients_op.end();
+	}
 
 	bool        _is_invite_only;
 	bool        _topic_protection;
