@@ -93,7 +93,7 @@ private:
 		}
 	};
 
-#include "defines.hpp"
+#include "typedef.hpp"
 	ClientOpIt findnick(std::string const& client_nick) {
 		for (ClientOpIt it = _clients_op.begin();
 			 it != _clients_op.end(); ++it) {

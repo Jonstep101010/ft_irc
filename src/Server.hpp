@@ -36,6 +36,9 @@ public:
 	// topic (set if operator (args), get if not (no args))
 	void topic(std::string after_cmd, Client const& client);
 
+	// mode message (change multiple settings)
+	void mode(std::string after_cmd, Client const& client);
+
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
