@@ -68,6 +68,22 @@ private:
 	std::string         _topic;
 	std::vector<Client> _clients;
 	std::vector<bool>   _is_operator;
+	// clang-format off
+	std::vector<std::pair<Client, bool> > _clients_op;
+	// clang-format on
+
+	class CompareClient {
+		const Client& targetClient;
+
+	public:
+		CompareClient(const Client& client)
+			: targetClient(client) {}
+
+		bool operator()(
+			const std::pair<Client, bool>& element) const {
+			return element.first == targetClient;
+		}
+	};
 
 	bool        _is_invite_only;
 	bool        _topic_protection;

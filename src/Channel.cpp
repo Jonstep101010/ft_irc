@@ -17,12 +17,14 @@
 
 // add user to channel
 // @follow-up handle modes, Client already joined, limit reached
-void Channel::addUser(Client const& client) {
-	if (std::find(_clients.begin(), _clients.end(), client)
-		== _clients.end()) {
+void Channel::addUser(const Client& client) {
+	ClientBoolIt it
+		= std::find_if(_clients_op.begin(), _clients_op.end(),
+					   CompareClient(client));
+
+	if (it == _clients_op.end()) {
 		client.Output(JOINEDREPLY);
-		_clients.push_back(client);
-		_is_operator.push_back(false);
+		_clients_op.push_back(std::make_pair(client, false));
 		Channel::Message(client, JOINED_NOTICE);
 	}
 }
