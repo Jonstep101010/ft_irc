@@ -13,4 +13,6 @@ AlignConsecutiveAssignments: AcrossEmptyLines
 AlignConsecutiveDeclarations: true
 PointerAlignment: Left
 ReflowComments: false
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortBlocksOnASingleLine: Always
 ...

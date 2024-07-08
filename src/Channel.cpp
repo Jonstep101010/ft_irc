@@ -22,6 +22,7 @@ void Channel::addUser(Client const& client) {
 		== _clients.end()) {
 		client.Output(JOINEDREPLY);
 		_clients.push_back(client);
+		_is_operator.push_back(false);
 		Channel::Message(client, JOINED_NOTICE);
 	}
 }
@@ -34,6 +35,8 @@ void Channel::removeUser(Client const& client) {
 		= std::find(_clients.begin(), _clients.end(), client);
 
 	if (toRemove != _clients.end()) {
+		_is_operator.erase(_is_operator.begin()
+						   + (toRemove - _clients.begin()));
 		_clients.erase(toRemove);
 	}
 }
@@ -66,8 +69,12 @@ void Channel::Message(Client const&      origin,
 }
 
 // set channel topic
-void Channel::setTopic(std::string const& newtopic) {
-	_topic = newtopic;
+void Channel::setTopic(std::string& new_topic) {
+	new_topic[0] == ' ' ? new_topic = new_topic.substr(1)
+						: new_topic;
+	new_topic[0] == ':' ? new_topic = new_topic.substr(1)
+						: new_topic;
+	_topic = new_topic;
 }
 
 /*
