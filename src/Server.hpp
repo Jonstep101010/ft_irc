@@ -36,7 +36,7 @@ public:
 
 	// topic (set if operator (args), get if not (no args))
 	void topic(std::string after_cmd, Client const& client);
-
+    
 	// parts the channel
 	void part(std::string after, Client const& client);
 
