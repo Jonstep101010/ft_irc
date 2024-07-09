@@ -40,6 +40,9 @@ public:
 	// parts the channel
 	void part(std::string after, Client const& client);
 
+	// mode message (change multiple settings)
+	void mode(std::string after_cmd, Client const& client);
+
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);

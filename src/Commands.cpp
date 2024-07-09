@@ -4,6 +4,7 @@
 #include "Utils.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cstddef>
@@ -59,43 +60,43 @@ void Server::quit(std::string after, Client const& client) {
 	// remove user from all channels
 	for (std::vector<Channel>::iterator it = _channels.begin();
 		 it != _channels.end(); ++it) {
+		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
 	}
 	// remove user from clients
-	close(client._ClientSocket);
-	_clients.erase(
-		std::find(_clients.begin(), _clients.end(), client));
 	for (size_t i = 0; i < _pollfds.size(); ++i) {
 		if (_pollfds[i].fd == client._ClientSocket) {
 			_pollfds.erase(_pollfds.begin() + i);
 		}
 	}
+	close(client._ClientSocket);
+	_clients.erase(
+		std::find(_clients.begin(), _clients.end(), client));
 }
 
 void Server::part(std::string after, Client const& client) {
+
 	// Extract channel name
 	std::string channel_name
 		= after.substr(0, after.find_first_of(" "));
 
 	// Find the channel
-	std::vector<Channel>::iterator it
+	std::vector<Channel>::iterator at_channel
 		= find_cnl(channel_name, _channels);
-	if (it != _channels.end()) {
 
+	if (at_channel != _channels.end()) {
 		// Check if client is part of the channel
-		if (std::find(it->_clients.begin(), it->_clients.end(),
-					  client)
-			!= it->_clients.end()) {
-			it->Message(client, PART_REPLY(client, it->_name));
-			it->removeUser(client);
+		if (at_channel->findnick(client._nickname)
+			!= at_channel->_clients_op.end()) {
+			client.Output(PART_REPLY(client, after));
+			at_channel->Message(client,
+								PART_REPLY(client, after));
+			at_channel->removeUser(client);
 		} else {
-			std::cout << "Client " << client._nickname
-					  << " is not part of channel "
-					  << channel_name << std::endl;
+			client.Output(ERR_NOTONCHANNEL);
 		}
 	} else {
-		std::cout << "Channel " << channel_name << " not found"
-				  << std::endl;
+		client.Output(ERR_NOSUCHCHANNEL);
 	}
 }
 
@@ -118,19 +119,101 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
+typedef enum e_modes {
+	INV_ONLY      = 'i',
+	KEY_SET       = 'k',
+	OP_PERM       = 'o',
+	TOPIC_PROTECT = 't',
+	LIMIT         = 'l',
+} MODES;
+
+// remove? @audit-info
+std::string get_additional_mode(std::string data) {
+	size_t pos = data.find_first_of(" ");
+	if (pos != 0 && pos != std::string::npos) {
+		pos = data.find_first_not_of(" ", pos);
+		if (pos != std::string::npos) {
+			return data.substr(pos);
+		}
+	}
+	return "";
+}
+
+// format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
+// "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
+// "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
+// "MODE #channel_name +l number" -> ["#channel_name", "+l", /* needs prefix & needs to be positive */ "num"]
+// "MODE #channel_name +i" -> ["#channel_name", "+i"]
+// "MODE #channel_name +t" -> ["#channel_name", "+t"]
+void Server::mode(std::string after, Client const& client) {
+	std::vector<std::string> args = split_spaces(after);
+	if (args.size() > 3) { return; }
+	// @note handle error
+	std::vector<Channel>::iterator channel
+		= find_cnl(args[0], _channels);
+	if (channel == _channels.end()) { return; }
+	// @todo handle error, channel not existing, user not being member,...
+	if (!channel->is_operator(client)) { return; }
+	// args[0] = channel_name
+	if ((args[1][0] != ADD && args[1][0] != RM)
+		|| !strchr("ikotl", args[1][1]) || args[1][2]) {
+		return;
+	}
+	if (args.size() == 3 && args[1][1] != 'k'
+		&& args[1][1] != 'l' && args[1][1] != 'o') {
+		// invalid number of arguments
+		return;
+	}
+	debug(DEBUG, "MODE vec[0]'" + args[0] + "'");
+	debug(DEBUG, "MODE vec[1]'" + args[1] + "'");
+	if (args.size() == 3) {
+		debug(DEBUG, "MODE vec[2]'" + args[2] + "'");
+	}
+	// @note priviledged access
+	// @follow-up more sophisticated parsing/checking
+	// @todo handle error
+	MODE_OP op_todo
+		= static_cast<MODE_OP>(static_cast<int>(args[1][0]));
+	MODES to_mod
+		= static_cast<MODES>(static_cast<int>(args[1][1]));
+
+	switch (to_mod) {
+	case INV_ONLY: {
+	}
+	case KEY_SET: {
+	}
+	case OP_PERM: {
+		if (!args[2].empty()) {
+			channel->chmod_op(op_todo, args[2]);
+		}
+		// @follow-up
+	}
+	case TOPIC_PROTECT: {
+		channel->_topic_protection = (op_todo == ADD);
+	}
+	case LIMIT: {
+	}
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
+			  << "'" << std::endl;
+
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
+		std::cout << "entered the else if " << std::endl;
 		if (cmd == "PRIVMSG") {
 			privmsg(after, client);
 		} else if (after[0] == '#' || after[0] == '&') {
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
+			: cmd == "MODE"  ? mode(after, client)
 							 : void();
+			cmd == "PART" ? part(after, client) : void();
 		}
 	}
 }
