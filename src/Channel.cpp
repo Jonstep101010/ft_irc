@@ -23,6 +23,9 @@ void Channel::addUser(const Client& client) {
 		= std::find_if(_clients_op.begin(), _clients_op.end(),
 					   CompareClient(client));
 
+	if (static_cast<int>(_clients_op.size()) >= _limit) {
+		throw LimitReached();
+	}
 	if (it == _clients_op.end()) {
 		client.Output(JOINEDREPLY);
 		_clients_op.push_back(std::make_pair(client, false));

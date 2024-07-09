@@ -30,7 +30,11 @@ void Server::join(std::string   channel_name,
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
-		to_join->addUser(client);
+		try {
+			to_join->addUser(client);
+		} catch (Channel::LimitReached) {
+			client.Output(ERR_CHANNELISFULL);
+		}
 	}
 }
 
@@ -167,6 +171,15 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_topic_protection = (op_todo == ADD);
 	}
 	case LIMIT: {
+		if (op_todo == ADD) {
+			if (args.size() == 3) {
+				channel->_limit = args[2][0] != '-'
+									? std::atoi(args[2].c_str())
+									: -1;
+			}
+		} else {
+			if (args.size() == 2) { channel->_limit = -1; }
+		}
 	}
 	}
 }

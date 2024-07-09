@@ -54,6 +54,8 @@ public:
 	/// USER MANAGEMENT ///
 	// add user to channel
 	void addUser(Client const& client);
+
+	class LimitReached : public std::exception {};
 	// remove user from channel
 	void removeUser(Client const& client);
 
