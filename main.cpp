@@ -1,4 +1,3 @@
-#include "Channel.hpp"
 #include "Client.hpp"
 #include "Server.hpp"
 #include <csignal>
@@ -10,9 +9,7 @@
 Server* Server::instance = NULL;
 
 void Server::staticWrapperSignal(int sig) {
-	if (instance != 0) {
-		instance->signalHandler(sig);
-	}
+	if (instance != 0) { instance->signalHandler(sig); }
 }
 
 void Server::signalHandler(int sig) {
@@ -26,9 +23,7 @@ void Server::signalHandler(int sig) {
 
 		// client sockets
 		for (size_t i = 0; i < _pollfds.size(); ++i) {
-			if (_pollfds[i].fd >= 0) {
-				close(_pollfds[i].fd);
-			}
+			if (_pollfds[i].fd >= 0) { close(_pollfds[i].fd); }
 		}
 
 		// free pollfds
@@ -37,10 +32,22 @@ void Server::signalHandler(int sig) {
 	}
 }
 
-int main() {
-	Channel none3;
-	Server  none4;
+int main(int argc, char* argv[]) {
+	if (argc < 3) {
+		std::cerr << "Usage: ./IRC <Port> <Password>\n";
+		return 1;
+	}
 
-	signal(SIGINT, none4.staticWrapperSignal);
-	none4.start();
+	int port = std::atoi(argv[1]);
+
+	if (port <= 0 || port > 65535) {
+		std::cerr
+			<< "Error: Port number out of valid range (1-65535)."
+			<< std::endl;
+		return 1;
+	}
+
+	Server ircServer(port, argv[2]);
+	signal(SIGINT, ircServer.staticWrapperSignal);
+	ircServer.start();
 }

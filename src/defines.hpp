@@ -38,6 +38,29 @@
 		+ client._ip + " PRIVMSG " + dest_channel->_name + " :" \
 		+ message + "\r\n"
 
+// topic reply
+#define RPL_NOTOPIC                                             \
+	":" + _server_ip + " 331 " + client._nickname + " "         \
+		+ channel_name + " :No topic is set\r\n"
+
+#define RPL_TOPIC                                               \
+	":" + _server_ip + " 332 " + client._nickname + " "         \
+		+ channel_name + " :" + channel->_topic + "\r\n"
+
+#define ERR_CHANOPRIVSNEEDED                                    \
+	":" + _server_ip + " 482 " + client._nickname + " "         \
+		+ channel_name + " :You're not channel operator\r\n"
+
+#define ERR_PASSWDMISMATCH                                      \
+	":" + _server_ip + " 464 * :Password incorrect\r\n"
+
+#define ERR_NEEDMOREPARAMS                                      \
+	":" + _server_ip + " 461 * PASS :Not enough parameters\r\n"
+
+// clang-format off
+typedef std::vector<std::pair<Client, bool> >::iterator ClientOpIt;
+typedef std::vector<std::pair<Client, bool> > ClientOp;
+
 // :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
 #define PART_REPLY(client, current_channel_name)                \
 	":" + client._nickname + "!" + client._name + "@"           \

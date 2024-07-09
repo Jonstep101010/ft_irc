@@ -1,7 +1,6 @@
 #pragma once
 #include "Channel.hpp"
 #include "Client.hpp"
-#include <cstddef>
 #include <netinet/in.h>
 #include <string>
 #include <vector>
@@ -12,6 +11,7 @@ class Channel;
 class Server {
 public:
 	Server();
+	Server(int port, std::string password);
 	Server(Server const& src);
 	~Server();
 
@@ -34,6 +34,9 @@ public:
 	// quit the connection
 	void quit(std::string after_cmd, Client const& client);
 
+	// topic (set if operator (args), get if not (no args))
+	void topic(std::string after_cmd, Client const& client);
+
 	// parts the channel
 	void part(std::string after, Client const& client);
 
@@ -42,8 +45,10 @@ public:
 	void        signalHandler(int sig);
 
 	void handleClientData(Client& client);
+	bool checkIfAlreadyConnected(Client& client);
 	void handleInitialConnection(Client&            client,
 								 const std::string& message);
+	void handlePassCommand(Client& client, std::string password);
 	void processClientBuffer(Client& client);
 
 	void pingClients();
@@ -58,9 +63,7 @@ public:
 		for (std::vector<Channel>::iterator it
 			 = channels.begin();
 			 it != channels.end(); ++it) {
-			if (it->_name == channel) {
-				return it;
-			}
+			if (it->_name == channel) { return it; }
 		}
 		return channels.end();
 	}
@@ -72,9 +75,7 @@ public:
 		for (std::vector<Client>::iterator it
 			 = collection.begin();
 			 it != collection.end(); ++it) {
-			if (it->_nickname == instance_name) {
-				return it;
-			}
+			if (it->_nickname == instance_name) { return it; }
 		}
 		return collection.end();
 	}
@@ -85,6 +86,7 @@ private:
 	int                        _server_socket;
 	int                        _port;
 	std::string                _server_ip;
+	std::string                _server_pass;
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;

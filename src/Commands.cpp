@@ -1,5 +1,8 @@
 #include "Channel.hpp"
+#include "Client.hpp"
 #include "Server.hpp"
+#include "Utils.hpp"
+#include "debug.hpp"
 #include "defines.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -16,38 +19,30 @@
 #include <unistd.h>
 #include <vector>
 
-std::string get_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		return std::string(data.std::string::substr(0, pos));
-	}
-	return "";
-}
-
-std::string get_after_cmd(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != std::string::npos) {
-		return std::string(data.std::string::substr(pos + 1));
-	}
-	return "";
-}
-
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	if (find_cnl(channel_name, _channels) == _channels.end()) {
-		_channels.push_back(Channel(channel_name));
+	std::vector<Channel>::iterator to_join
+		= find_cnl(channel_name, _channels);
+	if (to_join == _channels.end()) {
+		Channel new_cnl(channel_name);
+		new_cnl.addUser(client);
+		new_cnl._clients_op[0].second = true;
+		_channels.push_back(new_cnl);
+	} else {
+		to_join->addUser(client);
 	}
-	find_cnl(channel_name, _channels)->addUser(client);
 }
 
 void Server::privmsg(std::string after, Client const& client) {
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
-	std::vector<Channel>::iterator dest_channel
-		= Server::find_cnl(dest, _channels);
-	if (dest_channel != _channels.end()) {
-		dest_channel->Message(client, PRIVMSG_CHANNEL);
+	if (dest[0] == '#' || dest[0] == '&') {
+		std::vector<Channel>::iterator dest_channel
+			= Server::find_cnl(dest, _channels);
+		if (dest_channel != _channels.end()) {
+			dest_channel->Message(client, PRIVMSG_CHANNEL);
+		}
 	} else {
 		std::vector<Client>::iterator dest_client
 			= Server::findnick(dest, _clients);
@@ -58,7 +53,7 @@ void Server::privmsg(std::string after, Client const& client) {
 }
 
 void Server::quit(std::string after, Client const& client) {
-	std::cout << "Client quit";
+	debug(CLIENT, "Client Quit [" + client._nickname + "]");
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels
@@ -104,28 +99,38 @@ void Server::part(std::string after, Client const& client) {
 	}
 }
 
+void Server::topic(std::string after, Client const& client) {
+	const std::string              channel_name = get_cnl(after);
+	std::vector<Channel>::iterator channel
+		= find_cnl(channel_name, _channels);
+	if (channel == _channels.end()) { return; }
+	std::string new_topic = get_additional(after);
+	if (new_topic.empty()
+		&& after[after.find_first_of(" ") + 1] != ':') {
+		// only single channel is given as argument, possible postfix of space
+		channel->_topic.empty() ? client.Output(RPL_NOTOPIC)
+								: client.Output(RPL_TOPIC);
+	} else {
+		!channel->_topic_protection
+				|| channel->is_operator(client)
+			? channel->setTopic(new_topic)
+			: client.Output(ERR_CHANOPRIVSNEEDED);
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
 	if (data == "QUIT" || cmd == "QUIT") {
-		// message needs to be broadcastest to the whole channel that he is in.
-		// when no message, then just display <name> client quits to the channel
-		// @todo output to channels
 		quit(after, client);
-	}
-	if (cmd == "PART") {
-		part(after, client);
-	}
-	if (!after.empty()) {
-		if (cmd == "JOIN" && after[0] == '#') {
-			join(after.substr(0, after.find_first_of("\r\n")),
-				 client);
-		}
+	} else if (!after.empty()) {
 		if (cmd == "PRIVMSG") {
-			if (!after.empty()) {
-				privmsg(after, client);
-			}
+			privmsg(after, client);
+		} else if (after[0] == '#' || after[0] == '&') {
+			cmd == "JOIN"    ? join(after, client)
+			: cmd == "TOPIC" ? topic(after, client)
+							 : void();
 		}
 	}
 }
