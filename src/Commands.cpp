@@ -4,6 +4,7 @@
 #include "Utils.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cstddef>
@@ -92,6 +93,82 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
+typedef enum e_modes {
+	INV_ONLY      = 'i',
+	KEY_SET       = 'k',
+	OP_PERM       = 'o',
+	TOPIC_PROTECT = 't',
+	LIMIT         = 'l',
+} MODES;
+
+// remove? @audit-info
+std::string get_additional_mode(std::string data) {
+	size_t pos = data.find_first_of(" ");
+	if (pos != 0 && pos != std::string::npos) {
+		pos = data.find_first_not_of(" ", pos);
+		if (pos != std::string::npos) {
+			return data.substr(pos);
+		}
+	}
+	return "";
+}
+
+// format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
+// "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
+// "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
+// "MODE #channel_name +l number" -> ["#channel_name", "+l", /* needs prefix & needs to be positive */ "num"]
+// "MODE #channel_name +i" -> ["#channel_name", "+i"]
+// "MODE #channel_name +t" -> ["#channel_name", "+t"]
+void Server::mode(std::string after, Client const& client) {
+	std::vector<std::string> args = split_spaces(after);
+	if (args.size() > 3) { return; }
+	// @note handle error
+	std::vector<Channel>::iterator channel
+		= find_cnl(args[0], _channels);
+	if (channel == _channels.end()) { return; }
+	// @todo handle error, channel not existing, user not being member,...
+	if (!channel->is_operator(client)) { return; }
+	// args[0] = channel_name
+	if ((args[1][0] != ADD && args[1][0] != RM)
+		|| !strchr("ikotl", args[1][1]) || args[1][2]) {
+		return;
+	}
+	if (args.size() == 3 && args[1][1] != 'k'
+		&& args[1][1] != 'l' && args[1][1] != 'o') {
+		// invalid number of arguments
+		return;
+	}
+	debug(DEBUG, "MODE vec[0]'" + args[0] + "'");
+	debug(DEBUG, "MODE vec[1]'" + args[1] + "'");
+	if (args.size() == 3) {
+		debug(DEBUG, "MODE vec[2]'" + args[2] + "'");
+	}
+	// @note priviledged access
+	// @follow-up more sophisticated parsing/checking
+	// @todo handle error
+	MODE_OP op_todo
+		= static_cast<MODE_OP>(static_cast<int>(args[1][0]));
+	MODES to_mod
+		= static_cast<MODES>(static_cast<int>(args[1][1]));
+
+	switch (to_mod) {
+	case INV_ONLY: {
+	}
+	case KEY_SET: {
+	}
+	case OP_PERM: {
+		if (!args[2].empty()) {
+			channel->chmod_op(op_todo, args[2]);
+		}
+		// @follow-up
+	}
+	case TOPIC_PROTECT: {
+	}
+	case LIMIT: {
+	}
+	}
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
@@ -104,6 +181,7 @@ void Server::executeCommand(Client const&      client,
 		} else if (after[0] == '#' || after[0] == '&') {
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
+			: cmd == "MODE"  ? mode(after, client)
 							 : void();
 		}
 	}

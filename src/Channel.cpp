@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <algorithm>
 #include <iterator>
 #include <sstream>

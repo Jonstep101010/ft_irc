@@ -50,13 +50,9 @@
 #define ERR_CHANOPRIVSNEEDED                                    \
 	":" + _server_ip + " 482 " + client._nickname + " "         \
 		+ channel_name + " :You're not channel operator\r\n"
-
 #define ERR_PASSWDMISMATCH                                      \
 	":" + _server_ip + " 464 * :Password incorrect\r\n"
 
 #define ERR_NEEDMOREPARAMS                                      \
 	":" + _server_ip + " 461 * PASS :Not enough parameters\r\n"
 
-// clang-format off
-typedef std::vector<std::pair<Client, bool> >::iterator ClientOpIt;
-typedef std::vector<std::pair<Client, bool> > ClientOp;

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
@@ -38,4 +39,25 @@ std::string get_additional(std::string data) {
 		}
 	}
 	return "";
+}
+
+/**
+ * @brief split data into substrings, add each to vector
+ * 
+ * @param data to split by spaces
+ * @return std::vector<std::string>& 
+ */
+std::vector<std::string> split_spaces(const std::string& data) {
+	std::vector<std::string> args;
+
+	for (size_t pos = 0; pos < data.size();) {
+		size_t next = data.find_first_of(" ", pos);
+		if (next == std::string::npos) {
+			args.push_back(data.substr(pos));
+			break;
+		}
+		args.push_back(data.substr(pos, next - pos));
+		pos = next + 1;
+	}
+	return args;
 }
