@@ -17,7 +17,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <vector>
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
@@ -59,20 +58,17 @@ void Server::quit(std::string after, Client const& client) {
 	// remove user from all channels
 	for (std::vector<Channel>::iterator it = _channels.begin();
 		 it != _channels.end(); ++it) {
-		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
 	}
 	// remove user from clients
-	for (std::vector<struct pollfd>::iterator it
-		 = _pollfds.begin();
-		 it != _pollfds.end(); it++) {
-		if (it->fd == client._ClientSocket) {
-			_pollfds.erase(it);
-		}
-	}
 	close(client._ClientSocket);
 	_clients.erase(
 		std::find(_clients.begin(), _clients.end(), client));
+	for (size_t i = 0; i < _pollfds.size(); ++i) {
+		if (_pollfds[i].fd == client._ClientSocket) {
+			_pollfds.erase(_pollfds.begin() + i);
+		}
+	}
 }
 
 void Server::topic(std::string after, Client const& client) {
