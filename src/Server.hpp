@@ -11,6 +11,7 @@ class Channel;
 class Server {
 public:
 	Server();
+	Server(int port, std::string password);
 	Server(Server const& src);
 	~Server();
 
@@ -47,6 +48,7 @@ public:
 	bool checkIfAlreadyConnected(Client& client);
 	void handleInitialConnection(Client&            client,
 								 const std::string& message);
+	void handlePassCommand(Client& client, std::string password);
 	void processClientBuffer(Client& client);
 
 	void pingClients();
@@ -84,6 +86,7 @@ private:
 	int                        _server_socket;
 	int                        _port;
 	std::string                _server_ip;
+	std::string                _server_pass;
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
