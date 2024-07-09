@@ -200,12 +200,10 @@ void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
-			  << "'" << std::endl;
 
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		std::cout << "entered the else if " << std::endl;
 		if (cmd == "PRIVMSG") {
 			privmsg(after, client);
 		} else if (after[0] == '#' || after[0] == '&') {
