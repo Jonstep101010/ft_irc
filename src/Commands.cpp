@@ -163,6 +163,7 @@ void Server::mode(std::string after, Client const& client) {
 		// @follow-up
 	}
 	case TOPIC_PROTECT: {
+		channel->_topic_protection = (op_todo == ADD);
 	}
 	case LIMIT: {
 	}
