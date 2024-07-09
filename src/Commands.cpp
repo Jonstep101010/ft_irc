@@ -117,6 +117,7 @@ std::string get_additional_mode(std::string data) {
 // "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
 // "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
 // "MODE #channel_name +l number" -> ["#channel_name", "+l", /* needs prefix & needs to be positive */ "num"]
+// "MODE #channel_name -l" -> ["#channel_name", "-l"] // in case of removing limit, no optarg
 // "MODE #channel_name +i" -> ["#channel_name", "+i"]
 // "MODE #channel_name +t" -> ["#channel_name", "+t"]
 void Server::mode(std::string after, Client const& client) {
