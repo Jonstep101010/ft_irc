@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Bot.hpp"
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "debug.hpp"
@@ -251,6 +252,7 @@ std::string toString(int value) {
 */
 void Server::start() {
 	makeSocket();
+	Bot thisisthebog;
 	debug(INFO, "Server started on " + _server_ip + ":"
 					+ toString(_port));
 	debug(INFO, "Waiting for connections...");
