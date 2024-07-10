@@ -30,7 +30,11 @@ void Server::join(std::string   channel_name,
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
-		to_join->addUser(client);
+		try {
+			to_join->addUser(client);
+		} catch (Channel::LimitReached) {
+			client.Output(ERR_CHANNELISFULL);
+		}
 	}
 }
 
@@ -143,6 +147,7 @@ std::string get_additional_mode(std::string data) {
 // "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
 // "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
 // "MODE #channel_name +l number" -> ["#channel_name", "+l", /* needs prefix & needs to be positive */ "num"]
+// "MODE #channel_name -l" -> ["#channel_name", "-l"] // in case of removing limit, no optarg
 // "MODE #channel_name +i" -> ["#channel_name", "+i"]
 // "MODE #channel_name +t" -> ["#channel_name", "+t"]
 void Server::mode(std::string after, Client const& client) {
@@ -192,6 +197,15 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_topic_protection = (op_todo == ADD);
 	}
 	case LIMIT: {
+		if (op_todo == ADD) {
+			if (args.size() == 3) {
+				channel->_limit = args[2][0] != '-'
+									? std::atoi(args[2].c_str())
+									: -1;
+			}
+		} else {
+			if (args.size() == 2) { channel->_limit = -1; }
+		}
 	}
 	}
 }
