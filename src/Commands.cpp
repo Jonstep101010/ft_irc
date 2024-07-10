@@ -123,6 +123,79 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
+void Server::invite(std::string after, Client const& client) {
+
+	/* 
+  		Numeric Replies:
+
+           +ERR_NEEDMOREPARAMS              +ERR_NOSUCHNICK
+           +ERR_NOTONCHANNEL                +ERR_USERONCHANNEL
+           +ERR_CHANOPRIVSNEEDED
+           +RPL_INVITING                    RPL_AWAY
+
+ 	*/
+
+	// Check if we have enough parameters
+	size_t space_pos = after.find_first_of(" ");
+	if (space_pos == std::string::npos) {
+		client.Output(ERR_NEEDMOREPARAMS);
+		return;
+	}
+
+	const std::string invitee      = after.substr(0, space_pos);
+	const std::string channel_name = after.substr(space_pos + 1);
+
+	// Find the channel
+	std::vector<Channel>::iterator channel
+		= find_cnl(channel_name, _channels);
+
+	// Check if the inviter is on the channel (if it exists)
+	if (channel != _channels.end()
+		&& channel->findnick(client._nickname)
+			   == channel->_clients_op.end()) {
+		client.Output(ERR_NOTONCHANNEL);
+		return;
+	}
+
+	// Check if the inviter has the necessary privileges
+	if (channel != _channels.end() && channel->_is_invite_only
+		&& !channel->is_operator(client)) {
+		client.Output(ERR_CHANOPRIVSNEEDED);
+		return;
+	}
+
+	// Find the invitee
+	std::vector<Client>::iterator invitee_it
+		= findnick(invitee, _clients);
+	if (invitee_it == _clients.end()) {
+		client.Output(ERR_NOSUCHNICK);
+		return;
+	}
+
+	// Check if invitee is already on the channel
+	if (channel != _channels.end()
+		&& channel->findnick(invitee)
+			   != channel->_clients_op.end()) {
+		client.Output(ERR_USERONCHANNEL);
+		return;
+	}
+
+	// At this point, the invite is valid. Add invitee to the channel.
+	if (channel != _channels.end()) {
+		channel->addUser(*invitee_it);
+	}
+
+	// Send invite message to the invitee
+	invitee_it->Output(":" + client._nickname + " INVITE "
+					   + invitee + " " + channel_name);
+
+	// Send confirmation to the inviter
+	client.Output("341 " + client._nickname + " " + invitee + " "
+				  + channel_name);
+
+	//RPL_AWAY. In case the invitee is away, the inviter will get a notification.
+}
+
 typedef enum e_modes {
 	INV_ONLY      = 'i',
 	KEY_SET       = 'k',
@@ -217,7 +290,9 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		if (cmd == "PRIVMSG") {
+		if (cmd == "INVITE") {
+			invite(after, client);
+		} else if (cmd == "PRIVMSG") {
 			privmsg(after, client);
 		} else if (after[0] == '#' || after[0] == '&') {
 			cmd == "JOIN"    ? join(after, client)

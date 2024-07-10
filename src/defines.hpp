@@ -75,3 +75,16 @@
 #define ERR_NOTONCHANNEL                                        \
 	"442 " + client._nickname + " " + channel_name              \
 		+ " :You're not on that channel" + "\r\n"
+
+#define ERR_NOSUCHNICK                                          \
+	":" + _server_ip + " 401 " + client._nickname + " "         \
+		+ invitee + " :No such nick/channel\r\n"
+
+#define ERR_USERONCHANNEL                                       \
+	":" + _server_ip + " 443 " + client._nickname + " "         \
+		+ invitee + " " + channel_name                          \
+		+ " :is already on channel\r\n"
+
+#define RPL_INVITING                                            \
+	"341 " + client._nickname + " " + invitee_client + " "      \
+		+ channel_name + "\r\n"

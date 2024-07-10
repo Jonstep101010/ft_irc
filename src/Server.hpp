@@ -43,6 +43,9 @@ public:
 	// mode message (change multiple settings)
 	void mode(std::string after_cmd, Client const& client);
 
+	// invite a user to a channel
+	void invite(std::string after_cmd, Client const& client);
+
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
