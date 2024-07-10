@@ -78,6 +78,32 @@ void Server::quit(std::string after, Client const& client) {
 		std::find(_clients.begin(), _clients.end(), client));
 }
 
+void Server::part(std::string after, Client const& client) {
+
+	// Extract channel name
+	std::string channel_name
+		= after.substr(0, after.find_first_of(" "));
+
+	// Find the channel
+	std::vector<Channel>::iterator at_channel
+		= find_cnl(channel_name, _channels);
+
+	if (at_channel != _channels.end()) {
+		// Check if client is part of the channel
+		if (at_channel->findnick(client._nickname)
+			!= at_channel->_clients_op.end()) {
+			client.Output(PART_REPLY(client, after));
+			at_channel->Message(client,
+								PART_REPLY(client, after));
+			at_channel->removeUser(client);
+		} else {
+			client.Output(ERR_NOTONCHANNEL);
+		}
+	} else {
+		client.Output(ERR_NOSUCHCHANNEL);
+	}
+}
+
 void Server::topic(std::string after, Client const& client) {
 	const std::string              channel_name = get_cnl(after);
 	std::vector<Channel>::iterator channel
@@ -197,6 +223,7 @@ void Server::executeCommand(Client const&      client,
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
 			: cmd == "MODE"  ? mode(after, client)
+			: cmd == "PART"  ? part(after, client)
 							 : void();
 		}
 	}

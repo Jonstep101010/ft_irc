@@ -17,7 +17,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define PORT 8989
+#define PORT 8080
 #define PING_INTERVAL 60
 
 /*
