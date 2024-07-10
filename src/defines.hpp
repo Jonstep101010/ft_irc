@@ -56,9 +56,7 @@
 #define ERR_NEEDMOREPARAMS                                      \
 	":" + _server_ip + " 461 * PASS :Not enough parameters\r\n"
 
-
 // :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
-
 #define PART_REPLY(client, current_channel_name)                \
 	":" + client._nickname + "!" + client._name + "@"           \
 		+ client._ip + " PART " + current_channel_name + "\r\n"
@@ -68,6 +66,7 @@
 	"403 " + client._nickname + " " + channel_name              \
 		+ " :No such channel" + "\r\n"
 
+// "<client name> <channel name> :You're not on that channel"
 #define ERR_NOTONCHANNEL                                        \
 	"442 " + client._nickname + " " + channel_name              \
 		+ " :You're not on that channel" + "\r\n"

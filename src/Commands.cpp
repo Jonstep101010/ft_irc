@@ -200,7 +200,6 @@ void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
-
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
@@ -210,8 +209,8 @@ void Server::executeCommand(Client const&      client,
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
 			: cmd == "MODE"  ? mode(after, client)
+			: cmd == "PART"  ? part(after, client)
 							 : void();
-			cmd == "PART" ? part(after, client) : void();
 		}
 	}
 }
