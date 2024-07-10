@@ -23,7 +23,8 @@ void Channel::addUser(const Client& client) {
 		= std::find_if(_clients_op.begin(), _clients_op.end(),
 					   CompareClient(client));
 
-	if (static_cast<int>(_clients_op.size()) >= _limit) {
+	if (static_cast<int>(_clients_op.size()) >= _limit
+		&& _limit != -1) {
 		throw LimitReached();
 	}
 	if (it == _clients_op.end()) {
