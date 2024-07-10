@@ -43,6 +43,11 @@
 	":" + _server_ip + " 331 " + client._nickname + " "         \
 		+ channel_name + " :No topic is set\r\n"
 
+// channel limit reached
+#define ERR_CHANNELISFULL                                       \
+	":" + _server_ip + " 471 " + client._nickname + " "         \
+		+ channel_name + " :Cannot join channel (+l)\r\n"
+
 #define RPL_TOPIC                                               \
 	":" + _server_ip + " 332 " + client._nickname + " "         \
 		+ channel_name + " :" + channel->_topic + "\r\n"
