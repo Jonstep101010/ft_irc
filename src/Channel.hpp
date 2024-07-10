@@ -19,15 +19,19 @@ public:
 	** ------------------------------- CONSTRUCTOR --------------------------------
 	*/
 	Channel(std::string const& name)
-		: _name(name), _is_invite_only(), _topic_protection() {}
+		: _name(name)
+		, _limit(-1)
+		, _is_invite_only()
+		, _topic_protection() {}
 
 	Channel()
-		: _is_invite_only(), _topic_protection() {}
+		: _limit(-1), _is_invite_only(), _topic_protection() {}
 
 	Channel(const Channel& src)
 		: _name(src._name)
 		, _topic(src._topic)
 		, _clients_op(src._clients_op)
+		, _limit(src._limit)
 		, _is_invite_only(src._is_invite_only)
 		, _topic_protection(src._topic_protection)
 		, _key(src._key) {}
@@ -50,6 +54,8 @@ public:
 	/// USER MANAGEMENT ///
 	// add user to channel
 	void addUser(Client const& client);
+
+	class LimitReached : public std::exception {};
 	// remove user from channel
 	void removeUser(Client const& client);
 
@@ -120,6 +126,7 @@ private:
 		return _clients_op.end();
 	}
 
+	int         _limit;
 	bool        _is_invite_only;
 	bool        _topic_protection;
 	std::string _key; // if empty, no key required
