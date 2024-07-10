@@ -104,6 +104,84 @@ void Server::part(std::string after, Client const& client) {
 	}
 }
 
+/*
+	Command: KICK
+	Parameters: <channel> *( "," <channel> ) <user> *( "," <user> )
+				[<comment>]
+
+	The KICK command can be used to request the forced removal of a user
+	from a channel.  It causes the <user> to PART from the <channel> by
+	force.  For the message to be syntactically correct, there MUST be
+	either one channel parameter and multiple user parameter, or as many
+	channel parameters as there are user parameters.  If a "comment" is
+	given, this will be sent instead of the default message, the nickname
+	of the user issuing the KICK.
+
+	The server MUST NOT send KICK messages with multiple channels or
+	users to clients.  This is necessarily to maintain backward
+	compatibility with old client software.
+
+
+		KICK &Melbourne Matthew         ; Command to kick Matthew from
+									&Melbourne
+
+		KICK #Finnish John :Speaking English
+									; Command to kick John from #Finnish
+									using "Speaking English" as the
+									reason (comment).
+
+*/
+
+// Parameters: <channel> *( "," <channel> ) <user> *( "," <user> ) [<comment>]
+// [channel_name, user_name, (:comment)]
+
+/*removes single user from channel using part*/
+void Server::kick(std::string after, Client const& client) {
+	std::vector<std::string> args = split_spaces(after);
+	if (args.size() < 2) {
+		client.Output(ERR_NEEDMOREPARAMS);
+		return;
+	}
+	std::vector<Channel>::iterator channel
+		= find_cnl(args[0], _channels);
+	std::string channel_name = args[0];
+	if (channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (!channel->is_operator(client)) {
+		if (channel->findnick(client._nickname)
+			== channel->_clients_op.end()) {
+			client.Output(ERR_NOTONCHANNEL);
+		} else {
+			client.Output(ERR_CHANOPRIVSNEEDED);
+		}
+		return;
+	}
+	std::vector<Client>::iterator user
+		= Server::findnick(args[1], _clients);
+	if (user == _clients.end()) {
+		client.Output(ERR_USERNOTINCHANNEL);
+		return;
+	}
+	// if there is a comment (prefix with :) at idx 2, replace default message
+	if (args.size() == 3) {
+		if (args[2][0] != ':') {
+			// @note handle error?
+			return;
+		}
+		channel->Message(client, KICK_NOTICE(&args[2][1]));
+	} else {
+		// else return default message
+		channel->Message(client, KICK_NOTICE(client._nickname));
+	}
+	// @audit is this logic correct?
+	Client& tmp = *user;
+	tmp.Output(PART_REPLY(tmp, after));
+	channel->Message(tmp, PART_REPLY(tmp, after));
+	channel->removeUser(tmp);
+}
+
 void Server::topic(std::string after, Client const& client) {
 	const std::string              channel_name = get_cnl(after);
 	std::vector<Channel>::iterator channel
@@ -224,6 +302,7 @@ void Server::executeCommand(Client const&      client,
 			: cmd == "TOPIC" ? topic(after, client)
 			: cmd == "MODE"  ? mode(after, client)
 			: cmd == "PART"  ? part(after, client)
+			: cmd == "KICK"  ? kick(after, client)
 							 : void();
 		}
 	}

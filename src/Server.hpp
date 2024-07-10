@@ -40,6 +40,9 @@ public:
 	// removes client from channel
 	void part(std::string after, Client const& client);
 
+	// kick client from channel
+	void kick(std::string after, Client const& client);
+
 	// mode message (change multiple settings)
 	void mode(std::string after_cmd, Client const& client);
 

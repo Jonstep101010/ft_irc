@@ -75,3 +75,12 @@
 #define ERR_NOTONCHANNEL                                        \
 	"442 " + client._nickname + " " + channel_name              \
 		+ " :You're not on that channel" + "\r\n"
+
+#define ERR_USERNOTINCHANNEL                                    \
+	"441 " + client._nickname + " " + channel_name              \
+		+ " :They aren't on that channel" + "\r\n"
+
+#define KICK_NOTICE(comment)                                    \
+	":" + client._nickname + "!" + client._name + "@"           \
+		+ client._ip + " KICK " + channel_name + " "            \
+		+ user->_name + " :" + comment + "\r\n"
