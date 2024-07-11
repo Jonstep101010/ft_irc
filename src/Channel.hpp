@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "typedef.hpp"
 
 typedef enum e_mode_op {
 	ADD = '+',
@@ -115,7 +116,6 @@ private:
 		}
 	};
 
-#include "typedef.hpp"
 	ClientOpIt findnick(std::string const& client_nick) {
 		for (ClientOpIt it = _clients_op.begin();
 			 it != _clients_op.end(); ++it) {
