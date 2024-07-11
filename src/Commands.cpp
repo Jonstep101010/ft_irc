@@ -22,7 +22,7 @@
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	std::vector<Channel>::iterator to_join
+	ChannelIt to_join
 		= find_cnl(channel_name, _channels);
 	if (to_join == _channels.end()) {
 		Channel new_cnl(channel_name);
@@ -43,13 +43,13 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
 	if (dest[0] == '#' || dest[0] == '&') {
-		std::vector<Channel>::iterator dest_channel
+		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
 		}
 	} else {
-		std::vector<Client>::iterator dest_client
+		ClientIt dest_client
 			= Server::findnick(dest, _clients);
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG_USER);
@@ -62,7 +62,7 @@ void Server::quit(std::string after, Client const& client) {
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels
-	for (std::vector<Channel>::iterator it = _channels.begin();
+	for (ChannelIt it = _channels.begin();
 		 it != _channels.end(); ++it) {
 		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
@@ -85,7 +85,7 @@ void Server::part(std::string after, Client const& client) {
 		= after.substr(0, after.find_first_of(" "));
 
 	// Find the channel
-	std::vector<Channel>::iterator at_channel
+	ChannelIt at_channel
 		= find_cnl(channel_name, _channels);
 
 	if (at_channel != _channels.end()) {
@@ -106,7 +106,7 @@ void Server::part(std::string after, Client const& client) {
 
 void Server::topic(std::string after, Client const& client) {
 	const std::string              channel_name = get_cnl(after);
-	std::vector<Channel>::iterator channel
+	ChannelIt channel
 		= find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) { return; }
 	std::string new_topic = get_additional(after);
@@ -154,7 +154,7 @@ void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() > 3) { return; }
 	// @note handle error
-	std::vector<Channel>::iterator channel
+	ChannelIt channel
 		= find_cnl(args[0], _channels);
 	if (channel == _channels.end()) { return; }
 	// @todo handle error, channel not existing, user not being member,...
