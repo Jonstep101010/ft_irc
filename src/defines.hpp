@@ -82,9 +82,13 @@
 
 #define ERR_USERONCHANNEL                                       \
 	":" + _server_ip + " 443 " + client._nickname + " "         \
-		+ invitee + " " + channel_name                          \
+		+ invitee._nickname + " " + channel_name->_name         \
 		+ " :is already on channel\r\n"
 
+#define INVITE                                                  \
+	":" + client._nickname + " INVITE " + invitee._nickname     \
+		+ " " + channel->_name + "\r\n"
+
 #define RPL_INVITING                                            \
-	"341 " + client._nickname + " " + invitee_client + " "      \
-		+ channel_name + "\r\n"
+	"341 " + client._nickname + " " + invitee._nickname + " "   \
+		+ channel->_name + "\r\n"
