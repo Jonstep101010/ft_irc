@@ -129,27 +129,16 @@ void Server::kick(std::string after, Client const& client) {
 		}
 		return;
 	}
-	std::vector<Client>::iterator user
+	std::vector<Client>::iterator user_to_kick
 		= Server::findnick(args[1], _clients);
-	if (user == _clients.end()) {
+	if (user_to_kick == _clients.end()) {
 		client.Output(ERR_USERNOTINCHANNEL);
 		return;
 	}
-	// @follow-up if there is a comment, replace default message
-	if (args.size() == 3) {
-		if (args[2][0] != ':') {
-			// @follow-up is this an error?
-			return;
-		}
-		channel->Message(client, KICK_NOTICE(&args[2][1]));
-	} else {
-		channel->Message(client, KICK_NOTICE(client._nickname));
-	}
-	// @audit is this logic correct?
-	Client& tmp = *user;
-	tmp.Output(PART_REPLY(tmp, after));
-	channel->Message(tmp, PART_REPLY(tmp, after));
-	channel->removeUser(tmp);
+
+	channel->Message(client, KICK_NOTICE(after));
+	user_to_kick->Output(KICK_NOTICE(after));
+	channel->removeUser(*user_to_kick);
 }
 
 void Server::topic(std::string after, Client const& client) {
