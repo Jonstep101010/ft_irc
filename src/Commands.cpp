@@ -101,38 +101,12 @@ void Server::part(std::string after, Client const& client) {
 	}
 }
 
-/*
-	Command: KICK
-	Parameters: <channel> *( "," <channel> ) <user> *( "," <user> )
-				[<comment>]
-
-	The KICK command can be used to request the forced removal of a user
-	from a channel.  It causes the <user> to PART from the <channel> by
-	force.  For the message to be syntactically correct, there MUST be
-	either one channel parameter and multiple user parameter, or as many
-	channel parameters as there are user parameters.  If a "comment" is
-	given, this will be sent instead of the default message, the nickname
-	of the user issuing the KICK.
-
-	The server MUST NOT send KICK messages with multiple channels or
-	users to clients.  This is necessarily to maintain backward
-	compatibility with old client software.
-
-
-		KICK &Melbourne Matthew         ; Command to kick Matthew from
-									&Melbourne
-
-		KICK #Finnish John :Speaking English
-									; Command to kick John from #Finnish
-									using "Speaking English" as the
-									reason (comment).
-
-*/
-
 // Parameters: <channel> *( "," <channel> ) <user> *( "," <user> ) [<comment>]
 // [channel_name, user_name, (:comment)]
-
-/*removes single user from channel using part*/
+// If a "comment" is given, this will be sent instead of the default message, the nickname
+// of the user issuing the KICK.
+// 	KICK &Melbourne Matthew
+// 	KICK #Finnish John :Speaking English
 void Server::kick(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() < 2) {
@@ -161,15 +135,14 @@ void Server::kick(std::string after, Client const& client) {
 		client.Output(ERR_USERNOTINCHANNEL);
 		return;
 	}
-	// if there is a comment (prefix with :) at idx 2, replace default message
+	// @follow-up if there is a comment, replace default message
 	if (args.size() == 3) {
 		if (args[2][0] != ':') {
-			// @note handle error?
+			// @follow-up is this an error?
 			return;
 		}
 		channel->Message(client, KICK_NOTICE(&args[2][1]));
 	} else {
-		// else return default message
 		channel->Message(client, KICK_NOTICE(client._nickname));
 	}
 	// @audit is this logic correct?
