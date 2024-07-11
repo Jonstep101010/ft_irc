@@ -45,22 +45,6 @@ public:
 
 	// invite a user to a channel
 	void invite(std::string after_cmd, Client const& client);
-	bool isInviterOnChannel(
-		const Client& client,
-		const std::vector<Channel>::iterator&
-					channel, // how do I use typedef here pls.
-		std::string channel_name);
-	bool inviterHasPermissions(
-		const Client& client,
-		const std::vector<Channel>::iterator&
-					channel, // how do I use typedef here pls.
-		std::string channel_name);
-	bool isInviteeAlreadyOnChannel(
-		const Client& client, const Client& invitee,
-		const std::vector<Channel>::iterator& channel);
-	void completeInvitationAndOutput(
-		const Client& client, Client& invitee,
-		std::vector<Channel>::iterator& channel);
 
 	// signal and free
 	static void staticWrapperSignal(int sig);

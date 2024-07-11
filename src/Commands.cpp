@@ -22,8 +22,7 @@
 
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	ChannelIt to_join
-		= find_cnl(channel_name, _channels);
+	ChannelIt to_join = find_cnl(channel_name, _channels);
 	if (to_join == _channels.end()) {
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
@@ -49,8 +48,7 @@ void Server::privmsg(std::string after, Client const& client) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
 		}
 	} else {
-		ClientIt dest_client
-			= Server::findnick(dest, _clients);
+		ClientIt dest_client = Server::findnick(dest, _clients);
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG_USER);
 		}
@@ -62,8 +60,8 @@ void Server::quit(std::string after, Client const& client) {
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels
-	for (ChannelIt it = _channels.begin();
-		 it != _channels.end(); ++it) {
+	for (ChannelIt it = _channels.begin(); it != _channels.end();
+		 ++it) {
 		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
 	}
@@ -85,10 +83,11 @@ void Server::part(std::string after, Client const& client) {
 		= after.substr(0, after.find_first_of(" "));
 
 	// Find the channel
-	ChannelIt at_channel
-		= find_cnl(channel_name, _channels);
+	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
-	if (at_channel != _channels.end()) {
+	if (at_channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL);
+	} else {
 		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
 			!= at_channel->_clients_op.end()) {
@@ -99,15 +98,12 @@ void Server::part(std::string after, Client const& client) {
 		} else {
 			client.Output(ERR_NOTONCHANNEL);
 		}
-	} else {
-		client.Output(ERR_NOSUCHCHANNEL);
 	}
 }
 
 void Server::topic(std::string after, Client const& client) {
-	const std::string              channel_name = get_cnl(after);
-	ChannelIt channel
-		= find_cnl(channel_name, _channels);
+	const std::string channel_name = get_cnl(after);
+	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) { return; }
 	std::string new_topic = get_additional(after);
 	if (new_topic.empty()
@@ -123,64 +119,13 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
-bool Server::isInviterOnChannel(
-	const Client&                         client,
-	const std::vector<Channel>::iterator& channel,
-	std::string                           channel_name) {
-	if (channel != _channels.end()
-		&& channel->findnick(client._nickname)
-			   == channel->_clients_op.end()) {
-		client.Output(ERR_NOTONCHANNEL);
-		return false;
-	}
-	return true;
-}
-
-bool Server::inviterHasPermissions(
-	const Client&                         client,
-	const std::vector<Channel>::iterator& channel,
-	std::string                           channel_name) {
-	if (channel != _channels.end() && channel->_is_invite_only
-		&& !channel->is_operator(client)) {
-		client.Output(ERR_CHANOPRIVSNEEDED);
-		return false;
-	}
-	return true;
-}
-
-bool Server::isInviteeAlreadyOnChannel(
-	const Client& client, const Client& invitee,
-	const std::vector<Channel>::iterator& channel_name) {
-	if (channel_name != _channels.end()
-		&& channel_name->findnick(invitee._nickname)
-			   != channel_name->_clients_op.end()) {
-		client.Output(ERR_USERONCHANNEL);
-		return true;
-	}
-	return false;
-}
-
-void Server::completeInvitationAndOutput(
-	const Client& client, Client& invitee,
-	std::vector<Channel>::iterator& channel) {
-	if (channel != _channels.end()) {
-		channel->addUser(invitee);
-	}
-
-	// Send invite message to the invitee
-	invitee.Output(INVITE);
-
-	// Send confirmation to the inviter
-	client.Output(RPL_INVITING);
-}
-
 void Server::invite(std::string after, Client const& client) {
 	size_t space_pos = after.find_first_of(" ");
 	if (space_pos == std::string::npos) {
 		return client.Output(ERR_NEEDMOREPARAMS);
 	}
 
-	const std::string invitee      = after.substr(0, space_pos);
+	const std::string invitee_nick = after.substr(0, space_pos);
 	const std::string channel_name = after.substr(space_pos + 1);
 
 	std::vector<Channel>::iterator channel
@@ -188,21 +133,31 @@ void Server::invite(std::string after, Client const& client) {
 	if (channel == _channels.end()) {
 		return client.Output(ERR_NOSUCHCHANNEL);
 	}
-	std::vector<Client>::iterator invitee_client
-		= findnick(invitee, _clients);
-	if (invitee_client == _clients.end()) {
-		return client.Output(ERR_NOSUCHNICK);
+	std::vector<Client>::iterator invitee
+		= findnick(invitee_nick, _clients);
+	if (invitee == _clients.end()) {
+		return client.Output(ERR_NOSUCHNICK(invitee_nick));
 	}
 
-	if (!isInviterOnChannel(client, channel, channel_name)
-		|| !inviterHasPermissions(client, channel, channel_name)
-		|| isInviteeAlreadyOnChannel(client, *invitee_client,
-									 channel)) {
+	if (channel->findnick(invitee->_nickname)
+		!= channel->_clients_op.end()) {
+		client.Output(ERR_USERONCHANNEL(invitee_nick));
 		return;
 	}
-
-	completeInvitationAndOutput(client, *invitee_client,
-								channel);
+	if (!channel->is_operator(client)) {
+		if (channel->findnick(client._nickname)
+			== channel->_clients_op.end()) {
+			client.Output(ERR_CHANOPRIVSNEEDED);
+			return;
+		}
+		client.Output(ERR_NOTONCHANNEL);
+		return;
+	}
+	channel->addUser(*invitee);
+	// Send invite message to the invitee
+	invitee->Output(INVITE);
+	// Send confirmation to the inviter
+	client.Output(RPL_INVITING);
 }
 
 typedef enum e_modes {
@@ -236,8 +191,7 @@ void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() > 3) { return; }
 	// @note handle error
-	ChannelIt channel
-		= find_cnl(args[0], _channels);
+	ChannelIt channel = find_cnl(args[0], _channels);
 	if (channel == _channels.end()) { return; }
 	// @todo handle error, channel not existing, user not being member,...
 	if (!channel->is_operator(client)) { return; }
