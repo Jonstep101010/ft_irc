@@ -113,9 +113,9 @@ void Server::kick(std::string after, Client const& client) {
 		client.Output(ERR_NEEDMOREPARAMS);
 		return;
 	}
-	std::vector<Channel>::iterator channel
-		= find_cnl(args[0], _channels);
-	std::string channel_name = args[0];
+	const std::string channel_name = args[0];
+	const std::string user_name    = args[1];
+	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
 		client.Output(ERR_NOSUCHCHANNEL);
 		return;
@@ -129,16 +129,14 @@ void Server::kick(std::string after, Client const& client) {
 		}
 		return;
 	}
-	std::vector<Client>::iterator user_to_kick
-		= Server::findnick(args[1], _clients);
-	if (user_to_kick == _clients.end()) {
+	ClientIt kicked_user = Server::findnick(user_name, _clients);
+	if (kicked_user == _clients.end()) {
 		client.Output(ERR_USERNOTINCHANNEL);
 		return;
 	}
-
 	channel->Message(client, KICK_NOTICE(after));
-	user_to_kick->Output(KICK_NOTICE(after));
-	channel->removeUser(*user_to_kick);
+	kicked_user->Output(KICK_NOTICE(after));
+	channel->removeUser(*kicked_user);
 }
 
 void Server::topic(std::string after, Client const& client) {

@@ -77,7 +77,7 @@
 		+ " :You're not on that channel" + "\r\n"
 
 #define ERR_USERNOTINCHANNEL                                    \
-	"441 " + user_to_kick->_nickname + " " + channel_name       \
+	"441 " + kicked_user->_nickname + " " + channel_name        \
 		+ " :They aren't on that channel" + "\r\n"
 
 #define KICK_NOTICE(comment)                                    \
