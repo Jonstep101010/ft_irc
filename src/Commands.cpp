@@ -42,6 +42,19 @@
  */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
+	if (channel_name == "#0" || channel_name == "&0") {
+		for (ChannelIt it = _channels.begin();
+			 it != _channels.end(); ++it) {
+			if (it->findnick(client._nickname)
+				!= it->_clients_op.end()) {
+				client.Output(PART_REPLY(client, it->_name));
+				it->Message(client,
+							PART_REPLY(client, it->_name));
+				it->removeUser(client);
+			}
+		}
+		return;
+	}
 	ChannelIt to_join = find_cnl(channel_name, _channels);
 	if (to_join == _channels.end()) {
 		Channel new_cnl(channel_name);
@@ -217,10 +230,12 @@ void Server::invite(std::string after, Client const& client) {
 		client.Output(ERR_NOTONCHANNEL);
 		return;
 	}
-	channel->addUser(*invitee);
-	// Send invite message to the invitee
+	try {
+		channel->addUser(*invitee);
+	} catch (Channel::LimitReached) {
+		client.Output(ERR_CHANNELISFULL);
+	}
 	invitee->Output(INVITE);
-	// Send confirmation to the inviter
 	client.Output(RPL_INVITING);
 }
 
