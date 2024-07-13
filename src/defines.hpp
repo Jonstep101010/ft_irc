@@ -101,3 +101,7 @@
 #define RPL_INVITING                                            \
 	"341 " + client._nickname + " " + invitee->_nickname + " "  \
 		+ channel->_name + "\r\n"
+
+#define ERR_INVITEONLYCHAN                                      \
+	"473 " + client._nickname + " " + channel_name              \
+		+ " :Cannot join channel (+i)\r\n"

@@ -62,6 +62,7 @@ void Server::join(std::string   channel_name,
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
+		if (to_join->_is_invite_only) { client.Output(ERR_INVITEONLYCHAN); }
 		try {
 			to_join->addUser(client);
 		} catch (Channel::LimitReached) {
@@ -298,6 +299,7 @@ void Server::mode(std::string after, Client const& client) {
 
 	switch (to_mod) {
 	case INV_ONLY: {
+		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
 	}
