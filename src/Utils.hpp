@@ -1,7 +1,27 @@
 #pragma once
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
+
+void NormalizeChannelName(std::string& after) {
+	std::string::size_type channelStartPos
+		= after.find_first_of("#&");
+
+	if (channelStartPos != std::string::npos) {
+		std::string::size_type channelEndPos
+			= after.find_first_of(" ", channelStartPos);
+
+		if (channelEndPos == std::string::npos) {
+			channelEndPos = after.length();
+		}
+
+		std::transform(after.begin() + channelStartPos,
+					   after.begin() + channelEndPos,
+					   after.begin() + channelStartPos,
+					   ::tolower);
+	}
+}
 
 std::string getComment(const std::vector<std::string>& args,
 					   const std::string&              nick) {

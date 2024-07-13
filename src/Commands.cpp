@@ -20,6 +20,26 @@
 #include <unistd.h>
 #include <vector>
 
+/* 
+	According to chad gpt
+
+	Most IRC servers treat channel names as case insensitive. This means:
+
+	Typing /join #TEST and /join #test usually takes you to the same channel.
+	Some servers might behave differently, but that's rare.
+	In general, don't worry about capitalization in channel names on IRC.
+
+
+	According to claudio
+
+	Typically, IRC servers treat channel names as case-insensitive.
+	This means that /join #TEST and /join #test would usually refer to the
+	same channel. This behavior is part of the IRC protocol standard.
+
+
+	for safety we will lowercase all channel names?
+
+ */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
 	ChannelIt to_join = find_cnl(channel_name, _channels);
@@ -296,6 +316,7 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
+		NormalizeChannelName(after);
 		if (cmd == "INVITE") {
 			invite(after, client);
 		} else if (cmd == "PRIVMSG") {
