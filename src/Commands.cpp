@@ -20,6 +20,15 @@
 #include <unistd.h>
 #include <vector>
 
+/* 
+	bug:
+	/join #test
+	/join #tesT
+
+	the tesT channel gets created but the channel list on client doesn't get updated
+	/switch tesT doesn't do anything.
+
+ */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
 	ChannelIt to_join = find_cnl(channel_name, _channels);
