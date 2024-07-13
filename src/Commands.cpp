@@ -247,18 +247,6 @@ typedef enum e_modes {
 	LIMIT         = 'l',
 } MODES;
 
-// remove? @audit-info
-std::string get_additional_mode(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != 0 && pos != std::string::npos) {
-		pos = data.find_first_not_of(" ", pos);
-		if (pos != std::string::npos) {
-			return data.substr(pos);
-		}
-	}
-	return "";
-}
-
 // format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
 // "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
 // "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
@@ -302,6 +290,7 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
+		channel->_key = (op_todo == ADD) ? args[2] : "";
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
