@@ -297,7 +297,8 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
-		channel->_key = (op_todo == ADD) ? args[2] : "";
+		channel->_key = (op_todo == ADD) ? args[2] : (op_todo == RM) ? "" : channel->_key;
+		return ;
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
