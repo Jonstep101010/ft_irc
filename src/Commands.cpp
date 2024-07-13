@@ -101,6 +101,49 @@ void Server::part(std::string after, Client const& client) {
 	}
 }
 
+// Parameters: <channel> *( "," <channel> ) <user> *( "," <user> ) [<comment>]
+// [channel_name, user_name, (:comment)]
+// If a "comment" is given, this will be sent instead of the default message, the nickname
+// of the user issuing the KICK.
+// 	KICK &Melbourne Matthew
+// 	KICK #Finnish John :Speaking English
+void Server::kick(std::string after, Client const& client) {
+	std::vector<std::string> args = split_spaces(after);
+	if (args.size() < 2) {
+		client.Output(ERR_NEEDMOREPARAMS);
+		return;
+	}
+	const std::string channel_name = args[0];
+	const std::string user_name    = args[1];
+	const std::string comment
+		= getComment(args, client._nickname);
+	ChannelIt channel = find_cnl(channel_name, _channels);
+	if (channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (!channel->is_operator(client)) {
+		if (channel->findnick(client._nickname)
+			== channel->_clients_op.end()) {
+			client.Output(ERR_NOTONCHANNEL);
+		} else {
+			client.Output(ERR_CHANOPRIVSNEEDED);
+		}
+		return;
+	}
+	ClientIt kicked_user = Server::findnick(user_name, _clients);
+	if (kicked_user == _clients.end()) {
+		client.Output(ERR_USERNOTINCHANNEL);
+		return;
+	}
+	channel->Message(client, KICK_NOTICE);
+	Client& tmp = *kicked_user;
+	tmp.Output(PART_REPLY(tmp, channel_name + " " + comment));
+	channel->Message(
+		tmp, PART_REPLY(tmp, channel_name + " " + comment));
+	channel->removeUser(tmp);
+}
+
 void Server::topic(std::string after, Client const& client) {
 	const std::string channel_name = get_cnl(after);
 	ChannelIt channel = find_cnl(channel_name, _channels);
@@ -262,6 +305,7 @@ void Server::executeCommand(Client const&      client,
 			: cmd == "TOPIC" ? topic(after, client)
 			: cmd == "MODE"  ? mode(after, client)
 			: cmd == "PART"  ? part(after, client)
+			: cmd == "KICK"  ? kick(after, client)
 							 : void();
 		}
 	}
