@@ -80,9 +80,10 @@
 	"441 " + kicked_user->_nickname + " " + channel_name        \
 		+ " :They aren't on that channel" + "\r\n"
 
-#define KICK_NOTICE(comment)                                    \
+#define KICK_NOTICE                                             \
 	":" + client._nickname + "!" + client._name + "@"           \
-		+ client._ip + " KICK " + comment + "\r\n"
+		+ client._ip + " KICK " + channel_name + " "            \
+		+ user_name + " " + comment + "\r\n"
 
 #define ERR_NOSUCHNICK(invitee_nick)                            \
 	":" + _server_ip + " 401 " + client._nickname + " "         \

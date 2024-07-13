@@ -115,6 +115,8 @@ void Server::kick(std::string after, Client const& client) {
 	}
 	const std::string channel_name = args[0];
 	const std::string user_name    = args[1];
+	const std::string comment
+		= getComment(args, client._nickname);
 	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
 		client.Output(ERR_NOSUCHCHANNEL);
@@ -134,9 +136,12 @@ void Server::kick(std::string after, Client const& client) {
 		client.Output(ERR_USERNOTINCHANNEL);
 		return;
 	}
-	channel->Message(client, KICK_NOTICE(after));
-	kicked_user->Output(KICK_NOTICE(after));
-	channel->removeUser(*kicked_user);
+	channel->Message(client, KICK_NOTICE);
+	Client& tmp = *kicked_user;
+	tmp.Output(PART_REPLY(tmp, channel_name + " " + comment));
+	channel->Message(
+		tmp, PART_REPLY(tmp, channel_name + " " + comment));
+	channel->removeUser(tmp);
 }
 
 void Server::topic(std::string after, Client const& client) {

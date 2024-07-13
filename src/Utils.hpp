@@ -1,6 +1,23 @@
 #pragma once
+#include <sstream>
 #include <string>
 #include <vector>
+
+std::string getComment(const std::vector<std::string>& args,
+					   const std::string&              nick) {
+	if (args.size() <= 2) { return ":" + nick; }
+
+	std::ostringstream oss;
+	if (args[2][0] != ':') { oss << ':'; }
+
+	for (size_t i = 2; i < args.size(); ++i) {
+		if (i > 2) {
+			oss << " ";
+		} // Add space before each word except the first
+		oss << args[i];
+	}
+	return oss.str();
+}
 
 std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");
