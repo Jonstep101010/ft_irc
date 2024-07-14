@@ -3,6 +3,9 @@
 /**
  * @brief acknowledgement of a user joining a channel
  */
+
+#define MAX_INPUT 510
+
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \
 		+ client._ip /* client ip @note change */ + " JOIN "    \
@@ -105,3 +108,10 @@
 #define ERR_INVITEONLYCHAN                                      \
 	"473 " + client._nickname + " " + channel_name              \
 		+ " :Cannot join channel (+i)\r\n"
+
+#define ERR_ERRONEUSNICKNAME(client)                            \
+	"432 * " + client._nickname + " :Erroneus nickname\r\n"
+
+#define ERR_CHANNELNAMETOOLONG                                  \
+	":" + _server_ip + " 403 " + client._nickname + " "         \
+		+ channel_name + " :Channel name is too long" + "\r\n"

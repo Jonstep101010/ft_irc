@@ -152,7 +152,7 @@ void Server::pingClients() {
 }
 
 void Server::handleClientData(Client& client) {
-	char    buffer[1024];
+	char    buffer[MAX_INPUT];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
@@ -227,6 +227,10 @@ void Server::handleInitialConnection(
 		handlePassCommand(client, password);
 	} else if (message.substr(0, 4) == "NICK") {
 		client._nickname = message.substr(5);
+		if (client._nickname.length() > MAX_NICKNAME_LEN) {
+			client.Output(ERR_ERRONEUSNICKNAME(client));
+			quit("", client);
+		}
 		if (!client._name.empty()
 			&& !checkIfAlreadyConnected(client)) {
 			client._isConnected = true;

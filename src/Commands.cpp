@@ -55,6 +55,11 @@ void Server::join(std::string   channel_name,
 		}
 		return;
 	}
+	if (channel_name.length() >= CHANNEL_NAME_LEN) {
+		// Handle error: channel name too long
+		client.Output(ERR_CHANNELNAMETOOLONG);
+		return;
+	}
 	ChannelIt to_join = find_cnl(channel_name, _channels);
 	if (to_join == _channels.end()) {
 		Channel new_cnl(channel_name);
