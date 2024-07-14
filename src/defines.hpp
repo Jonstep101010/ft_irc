@@ -115,3 +115,7 @@
 #define ERR_CHANNELNAMETOOLONG                                  \
 	":" + _server_ip + " 403 " + client._nickname + " "         \
 		+ channel_name + " :Channel name is too long" + "\r\n"
+
+#define ERR_BADCHANNELKEY                                       \
+	"475 " + client._nickname + " " + channel_name              \
+		+ " :Cannot join channel (+k)\r\n"
