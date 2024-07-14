@@ -55,9 +55,10 @@ void Server::join(std::string   channel_name,
 		}
 		return;
 	}
-	std::vector<std::string> name_key = split_spaces(channel_name);
+	std::vector<std::string> name_key
+		= split_spaces(channel_name);
 	ChannelIt to_join = find_cnl(name_key[0], _channels);
-    if (name_key[0].length() >= CHANNEL_NAME_LEN) {
+	if (name_key[0].length() >= CHANNEL_NAME_LEN) {
 		// Handle error: channel name too long
 		client.Output(ERR_CHANNELNAMETOOLONG);
 		return;
@@ -74,7 +75,9 @@ void Server::join(std::string   channel_name,
 			client.Output(ERR_BADCHANNELKEY);
 			return;
 		}
-		if (to_join->_is_invite_only) { client.Output(ERR_INVITEONLYCHAN); }
+		if (to_join->_is_invite_only) {
+			client.Output(ERR_INVITEONLYCHAN);
+		}
 		try {
 			to_join->addUser(client);
 		} catch (Channel::LimitReached) {
@@ -302,8 +305,10 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
-		channel->_key = (op_todo == ADD) ? args[2] : (op_todo == RM) ? "" : channel->_key;
-		return ;
+		channel->_key = (op_todo == ADD) ? args[2]
+					  : (op_todo == RM)  ? ""
+										 : channel->_key;
+		return;
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
@@ -328,10 +333,38 @@ void Server::mode(std::string after, Client const& client) {
 	}
 }
 
+void Server::nick(std::string after, Client const& client) {
+
+	/* 
+ 		+ERR_NONICKNAMEGIVEN             +ERR_ERRONEUSNICKNAME
+        +ERR_NICKNAMEINUSE               -ERR_NICKCOLLISION
+    	-ERR_UNAVAILRESOURCE             -ERR_RESTRICTED
+
+ */
+
+	if (after.length() > MAX_NICKNAME_LEN) {
+		client.Output(ERR_ERRONEUSNICKNAME(client));
+		return;
+	}
+	if (after.length() == 0) {
+		client.Output(ERR_NONICKNAMEGIVEN);
+		return;
+	}
+	if (findnick(after, _clients) != _clients.end()) {
+		client.Output(ERR_NICKNAMEINUSE);
+		return;
+	}
+	// ERR_NICKCOLLISION will give an error if the nickname is used,
+	// but we are not using it. Not to handled?
+	// ERR_UNAVAILRESOURCE an error in case of failed to change nickname
+	// ERR_RESTRICTED an error in case of restricted nickname
+}
+
 void Server::executeCommand(Client const&      client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
+	if (cmd == "NICK") { nick(after, client); }
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {

@@ -119,3 +119,10 @@
 #define ERR_BADCHANNELKEY                                       \
 	"475 " + client._nickname + " " + channel_name              \
 		+ " :Cannot join channel (+k)\r\n"
+
+#define ERR_NONICKNAMEGIVEN                                     \
+	"431 " + client._nickname + " :Nickname not given\r\n"
+
+#define ERR_NICKNAMEINUSE                                       \
+	"433 " + client._nickname + " " + client._nickname          \
+		+ " :Nickname is already in use\r\n"

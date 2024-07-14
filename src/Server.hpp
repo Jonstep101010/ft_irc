@@ -49,6 +49,9 @@ public:
 	// invite a user to a channel
 	void invite(std::string after_cmd, Client const& client);
 
+	// change own nickname on server
+	void nick(std::string after_cmd, Client const& client);
+
 	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
