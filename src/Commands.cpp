@@ -57,6 +57,11 @@ void Server::join(std::string   channel_name,
 	}
 	std::vector<std::string> name_key = split_spaces(channel_name);
 	ChannelIt to_join = find_cnl(name_key[0], _channels);
+    if (name_key[0].length() >= CHANNEL_NAME_LEN) {
+		// Handle error: channel name too long
+		client.Output(ERR_CHANNELNAMETOOLONG);
+		return;
+	}
 	if (to_join == _channels.end()) {
 		// can a channel be created with a key? @aceauses @follow-up
 		Channel new_cnl(channel_name);

@@ -1,10 +1,11 @@
 #pragma once
 #include "Client.hpp"
+#include "typedef.hpp"
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <vector>
-#include "typedef.hpp"
+
+#define CHANNEL_NAME_LEN 50
 
 typedef enum e_mode_op {
 	ADD = '+',
