@@ -105,3 +105,7 @@
 #define ERR_INVITEONLYCHAN                                      \
 	"473 " + client._nickname + " " + channel_name              \
 		+ " :Cannot join channel (+i)\r\n"
+
+#define ERR_BADCHANNELKEY                                       \
+	"475 " + client._nickname + " " + channel_name              \
+		+ " :Cannot join channel (+k)\r\n"

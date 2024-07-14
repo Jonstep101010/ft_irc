@@ -55,13 +55,20 @@ void Server::join(std::string   channel_name,
 		}
 		return;
 	}
-	ChannelIt to_join = find_cnl(channel_name, _channels);
+	std::vector<std::string> name_key = split_spaces(channel_name);
+	ChannelIt to_join = find_cnl(name_key[0], _channels);
 	if (to_join == _channels.end()) {
+		// can a channel be created with a key? @aceauses @follow-up
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
+		if (!to_join->_key.empty()
+			&& to_join->_key != name_key[1]) {
+			client.Output(ERR_BADCHANNELKEY);
+			return;
+		}
 		if (to_join->_is_invite_only) { client.Output(ERR_INVITEONLYCHAN); }
 		try {
 			to_join->addUser(client);
@@ -247,18 +254,6 @@ typedef enum e_modes {
 	LIMIT         = 'l',
 } MODES;
 
-// remove? @audit-info
-std::string get_additional_mode(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != 0 && pos != std::string::npos) {
-		pos = data.find_first_not_of(" ", pos);
-		if (pos != std::string::npos) {
-			return data.substr(pos);
-		}
-	}
-	return "";
-}
-
 // format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
 // "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
 // "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
@@ -302,6 +297,8 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
+		channel->_key = (op_todo == ADD) ? args[2] : (op_todo == RM) ? "" : channel->_key;
+		return ;
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
