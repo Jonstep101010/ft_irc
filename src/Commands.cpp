@@ -55,9 +55,10 @@ void Server::join(std::string   channel_name,
 		}
 		return;
 	}
-	std::vector<std::string> name_key = split_spaces(channel_name);
+	std::vector<std::string> name_key
+		= split_spaces(channel_name);
 	ChannelIt to_join = find_cnl(name_key[0], _channels);
-    if (name_key[0].length() >= CHANNEL_NAME_LEN) {
+	if (name_key[0].length() >= CHANNEL_NAME_LEN) {
 		// Handle error: channel name too long
 		client.Output(ERR_CHANNELNAMETOOLONG);
 		return;
@@ -74,7 +75,9 @@ void Server::join(std::string   channel_name,
 			client.Output(ERR_BADCHANNELKEY);
 			return;
 		}
-		if (to_join->_is_invite_only) { client.Output(ERR_INVITEONLYCHAN); }
+		if (to_join->_is_invite_only) {
+			client.Output(ERR_INVITEONLYCHAN);
+		}
 		try {
 			to_join->addUser(client);
 		} catch (Channel::LimitReached) {
@@ -302,8 +305,10 @@ void Server::mode(std::string after, Client const& client) {
 		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
-		channel->_key = (op_todo == ADD) ? args[2] : (op_todo == RM) ? "" : channel->_key;
-		return ;
+		channel->_key = (op_todo == ADD) ? args[2]
+					  : (op_todo == RM)  ? ""
+										 : channel->_key;
+		return;
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
@@ -328,10 +333,69 @@ void Server::mode(std::string after, Client const& client) {
 	}
 }
 
-void Server::executeCommand(Client const&      client,
+static bool valid_char(std::string after) {
+	if (after.length() > MAX_NICKNAME_LEN) { return false; }
+	const std::string valid_char = "abcdefghijklmnopqrstuvwxyz"
+								   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+								   "0123456789"
+								   "[]\\`_^{|}";
+	for (size_t i = 0; i < after.length(); i++) {
+		if (valid_char.find(after[i]) == std::string::npos) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void Server::nick(std::string after, Client& client) {
+
+	// @todo add more checks here
+	if (!valid_char(after)) {
+		client.Output(ERR_ERRONEUSNICKNAME(client));
+		return;
+	}
+	if (after.length() == 0) {
+		client.Output(ERR_NONICKNAMEGIVEN);
+		return;
+	}
+	if (findnick(after, _clients) != _clients.end()) {
+		client.Output(ERR_NICKNAMEINUSE);
+		return;
+	}
+
+	std::string oldNick = client._nickname;
+	client._nickname    = after;
+	client.Output(NICK_REPLY);
+
+	// Update nickname in channels, inform other clients, and update channel records
+	for (ChannelIt channel = _channels.begin();
+		 channel != _channels.end(); ++channel) {
+		if (channel->findnick(oldNick)
+			!= channel->_clients_op.end()) {
+			channel->setClientNick(oldNick, after);
+			channel->Message(client, NICK_REPLY);
+		}
+	}
+
+	// Update the client's nickname in the server's client list
+	for (ClientIt it = _clients.begin(); it != _clients.end();
+		 ++it) {
+		if (it->_nickname == oldNick) {
+			it->_nickname = after;
+			break;
+		}
+	}
+}
+
+void Server::executeCommand(Client&            client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
+	if (cmd == "PONG") {
+		client._awaiting_pong = false;
+		debug(PONG, "Received from " + client._nickname);
+	}
+	if (cmd == "NICK") { nick(after, client); }
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
