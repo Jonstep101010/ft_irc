@@ -174,16 +174,10 @@ void Server::processClientBuffer(Client& client) {
 		   != std::string::npos) {
 		std::string message = client._inputBuffer.substr(0, pos);
 		client._inputBuffer.erase(0, pos + 2);
-
 		if (!client._isConnected) {
 			handleInitialConnection(client, message);
 		} else {
-			if (message.find("PONG") == 0) {
-				client._awaiting_pong = false;
-				debug(PONG, "Received from " + client._nickname);
-			} else {
-				executeCommand(client, message);
-			}
+			executeCommand(client, message);
 		}
 	}
 }
