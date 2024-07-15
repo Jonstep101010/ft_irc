@@ -86,7 +86,7 @@ void Server::makeSocket() {
 									   .sin_port = htons(_port),
 									   .sin_addr = {
 										   .s_addr = INADDR_ANY,
-									   }};
+									   }, .sin_zero = {0}};
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
 		< 0) {
