@@ -126,3 +126,8 @@
 #define ERR_NICKNAMEINUSE                                       \
 	"433 " + client._nickname + " " + client._nickname          \
 		+ " :Nickname is already in use\r\n"
+
+//:WiZ!jto@tolsun.oulu.fi NICK Kilroy
+#define NICK_REPLY                                              \
+	":" + oldNick + "!" + client._name + "@" + client._ip       \
+		+ " NICK " + after + "\r\n"

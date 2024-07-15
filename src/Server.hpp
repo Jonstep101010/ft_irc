@@ -1,6 +1,7 @@
 #pragma once
 #include "Channel.hpp"
 #include "Client.hpp"
+#include "typedef.hpp"
 #include <netinet/in.h>
 #include <string>
 #include <vector>
@@ -22,8 +23,7 @@ public:
 	void acceptConnection(int listeningSocket);
 
 	// manage commands passed by clients @follow-up
-	void executeCommand(Client const&      client,
-						std::string const& data);
+	void executeCommand(Client& client, std::string const& data);
 
 	// join a channel
 	void join(std::string channel_name, Client const& client);
@@ -50,7 +50,7 @@ public:
 	void invite(std::string after_cmd, Client const& client);
 
 	// change own nickname on server
-	void nick(std::string after_cmd, Client const& client);
+	void nick(std::string after_cmd, Client& client);
 
 	// signal and free
 	static void staticWrapperSignal(int sig);

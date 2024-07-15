@@ -333,16 +333,12 @@ void Server::mode(std::string after, Client const& client) {
 	}
 }
 
-void Server::nick(std::string after, Client const& client) {
+void Server::nick(std::string after, Client& client) {
 
-	/* 
- 		+ERR_NONICKNAMEGIVEN             +ERR_ERRONEUSNICKNAME
-        +ERR_NICKNAMEINUSE               -ERR_NICKCOLLISION
-    	-ERR_UNAVAILRESOURCE             -ERR_RESTRICTED
-
- */
-
-	if (after.length() > MAX_NICKNAME_LEN) {
+	// @todo add more checks here
+	if (after.length() > MAX_NICKNAME_LEN
+		|| std::find(after.begin(), after.end(), ' ')
+			   != after.end()) {
 		client.Output(ERR_ERRONEUSNICKNAME(client));
 		return;
 	}
@@ -354,13 +350,32 @@ void Server::nick(std::string after, Client const& client) {
 		client.Output(ERR_NICKNAMEINUSE);
 		return;
 	}
-	// ERR_NICKCOLLISION will give an error if the nickname is used,
-	// but we are not using it. Not to handled?
-	// ERR_UNAVAILRESOURCE an error in case of failed to change nickname
-	// ERR_RESTRICTED an error in case of restricted nickname
+
+	std::string oldNick = client._nickname;
+	client._nickname    = after;
+	client.Output(NICK_REPLY);
+
+	// Update nickname in channels, inform other clients, and update channel records
+	for (ChannelIt channel = _channels.begin();
+		 channel != _channels.end(); ++channel) {
+		if (channel->findnick(oldNick)
+			!= channel->_clients_op.end()) {
+			channel->setClientNick(oldNick, after);
+			channel->Message(client, NICK_REPLY);
+		}
+	}
+
+	// Update the client's nickname in the server's client list
+	for (ClientIt it = _clients.begin(); it != _clients.end();
+		 ++it) {
+		if (it->_nickname == oldNick) {
+			it->_nickname = after;
+			break;
+		}
+	}
 }
 
-void Server::executeCommand(Client const&      client,
+void Server::executeCommand(Client&            client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);

@@ -83,6 +83,14 @@ public:
 		}
 	}
 
+	void setClientNick(std::string& old, std::string& newName) {
+		//change old name inside _clients_op to new
+		ClientOpIt it = findnick(old);
+		if (it != _clients_op.end()) {
+			it->first._nickname = newName;
+		}
+	}
+
 	friend class Server;
 
 private:
