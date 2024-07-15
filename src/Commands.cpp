@@ -333,12 +333,24 @@ void Server::mode(std::string after, Client const& client) {
 	}
 }
 
+static bool valid_char(std::string after) {
+	if (after.length() > MAX_NICKNAME_LEN) { return false; }
+	const std::string valid_char = "abcdefghijklmnopqrstuvwxyz"
+								   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+								   "0123456789"
+								   "[]\\`_^{|}";
+	for (size_t i = 0; i < after.length(); i++) {
+		if (valid_char.find(after[i]) == std::string::npos) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void Server::nick(std::string after, Client& client) {
 
 	// @todo add more checks here
-	if (after.length() > MAX_NICKNAME_LEN
-		|| std::find(after.begin(), after.end(), ' ')
-			   != after.end()) {
+	if (!valid_char(after)) {
 		client.Output(ERR_ERRONEUSNICKNAME(client));
 		return;
 	}
@@ -379,6 +391,10 @@ void Server::executeCommand(Client&            client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
+	if (cmd == "PONG") {
+		client._awaiting_pong = false;
+		debug(PONG, "Received from " + client._nickname);
+	}
 	if (cmd == "NICK") { nick(after, client); }
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);

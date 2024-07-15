@@ -110,7 +110,8 @@
 		+ " :Cannot join channel (+i)\r\n"
 
 #define ERR_ERRONEUSNICKNAME(client)                            \
-	"432 * " + client._nickname + " :Erroneus nickname\r\n"
+	":" + _server_ip + " 432 " + client._nickname               \
+		+ " :Erroneous nickname\r\n"
 
 #define ERR_CHANNELNAMETOOLONG                                  \
 	":" + _server_ip + " 403 " + client._nickname + " "         \
