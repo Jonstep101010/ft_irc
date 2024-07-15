@@ -172,6 +172,9 @@ void Server::processClientBuffer(Client& client) {
 	while ((pos = client._inputBuffer.find("\r\n"))
 		   != std::string::npos) {
 		std::string message = client._inputBuffer.substr(0, pos);
+		if (message.substr(0, 6) == "CAP LS") {
+			client.Output("CAP * LS :\r\n");
+		}
 		client._inputBuffer.erase(0, pos + 2);
 		if (!client._isConnected) {
 			handleInitialConnection(client, message);
