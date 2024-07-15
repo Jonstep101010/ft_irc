@@ -20,16 +20,61 @@
 #include <unistd.h>
 #include <vector>
 
+/* 
+	According to chad gpt
+
+	Most IRC servers treat channel names as case insensitive. This means:
+
+	Typing /join #TEST and /join #test usually takes you to the same channel.
+	Some servers might behave differently, but that's rare.
+	In general, don't worry about capitalization in channel names on IRC.
+
+
+	According to claudio
+
+	Typically, IRC servers treat channel names as case-insensitive.
+	This means that /join #TEST and /join #test would usually refer to the
+	same channel. This behavior is part of the IRC protocol standard.
+
+
+	for safety we will lowercase all channel names?
+
+ */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
-	std::vector<Channel>::iterator to_join
-		= find_cnl(channel_name, _channels);
+	if (channel_name == "#0" || channel_name == "&0") {
+		for (ChannelIt it = _channels.begin();
+			 it != _channels.end(); ++it) {
+			if (it->findnick(client._nickname)
+				!= it->_clients_op.end()) {
+				client.Output(PART_REPLY(client, it->_name));
+				it->Message(client,
+							PART_REPLY(client, it->_name));
+				it->removeUser(client);
+			}
+		}
+		return;
+	}
+	std::vector<std::string> name_key = split_spaces(channel_name);
+	ChannelIt to_join = find_cnl(name_key[0], _channels);
+    if (name_key[0].length() >= CHANNEL_NAME_LEN) {
+		// Handle error: channel name too long
+		client.Output(ERR_CHANNELNAMETOOLONG);
+		return;
+	}
 	if (to_join == _channels.end()) {
+		// can a channel be created with a key? @aceauses @follow-up
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
+		if (!to_join->_key.empty()
+			&& to_join->_key != name_key[1]) {
+			client.Output(ERR_BADCHANNELKEY);
+			return;
+		}
+		if (to_join->_is_invite_only) { client.Output(ERR_INVITEONLYCHAN); }
 		try {
 			to_join->addUser(client);
 		} catch (Channel::LimitReached) {
@@ -44,14 +89,13 @@ void Server::privmsg(std::string after, Client const& client) {
 		= after.substr(after.find_first_of(" ") + 2);
 	// @follow-up check if the message is a bot message
 	if (dest[0] == '#' || dest[0] == '&') {
-		std::vector<Channel>::iterator dest_channel
+		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
 		}
 	} else {
-		std::vector<Client>::iterator dest_client
-			= Server::findnick(dest, _clients);
+		ClientIt dest_client = Server::findnick(dest, _clients);
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG_USER);
 		}
@@ -63,8 +107,8 @@ void Server::quit(std::string after, Client const& client) {
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
 	// remove user from all channels
-	for (std::vector<Channel>::iterator it = _channels.begin();
-		 it != _channels.end(); ++it) {
+	for (ChannelIt it = _channels.begin(); it != _channels.end();
+		 ++it) {
 		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
 	}
@@ -86,10 +130,11 @@ void Server::part(std::string after, Client const& client) {
 		= after.substr(0, after.find_first_of(" "));
 
 	// Find the channel
-	std::vector<Channel>::iterator at_channel
-		= find_cnl(channel_name, _channels);
+	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
-	if (at_channel != _channels.end()) {
+	if (at_channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL);
+	} else {
 		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
 			!= at_channel->_clients_op.end()) {
@@ -100,15 +145,55 @@ void Server::part(std::string after, Client const& client) {
 		} else {
 			client.Output(ERR_NOTONCHANNEL);
 		}
-	} else {
-		client.Output(ERR_NOSUCHCHANNEL);
 	}
 }
 
+// Parameters: <channel> *( "," <channel> ) <user> *( "," <user> ) [<comment>]
+// [channel_name, user_name, (:comment)]
+// If a "comment" is given, this will be sent instead of the default message, the nickname
+// of the user issuing the KICK.
+// 	KICK &Melbourne Matthew
+// 	KICK #Finnish John :Speaking English
+void Server::kick(std::string after, Client const& client) {
+	std::vector<std::string> args = split_spaces(after);
+	if (args.size() < 2) {
+		client.Output(ERR_NEEDMOREPARAMS);
+		return;
+	}
+	const std::string channel_name = args[0];
+	const std::string user_name    = args[1];
+	const std::string comment
+		= getComment(args, client._nickname);
+	ChannelIt channel = find_cnl(channel_name, _channels);
+	if (channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (!channel->is_operator(client)) {
+		if (channel->findnick(client._nickname)
+			== channel->_clients_op.end()) {
+			client.Output(ERR_NOTONCHANNEL);
+		} else {
+			client.Output(ERR_CHANOPRIVSNEEDED);
+		}
+		return;
+	}
+	ClientIt kicked_user = Server::findnick(user_name, _clients);
+	if (kicked_user == _clients.end()) {
+		client.Output(ERR_USERNOTINCHANNEL);
+		return;
+	}
+	channel->Message(client, KICK_NOTICE);
+	Client& tmp = *kicked_user;
+	tmp.Output(PART_REPLY(tmp, channel_name + " " + comment));
+	channel->Message(
+		tmp, PART_REPLY(tmp, channel_name + " " + comment));
+	channel->removeUser(tmp);
+}
+
 void Server::topic(std::string after, Client const& client) {
-	const std::string              channel_name = get_cnl(after);
-	std::vector<Channel>::iterator channel
-		= find_cnl(channel_name, _channels);
+	const std::string channel_name = get_cnl(after);
+	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) { return; }
 	std::string new_topic = get_additional(after);
 	if (new_topic.empty()
@@ -124,6 +209,49 @@ void Server::topic(std::string after, Client const& client) {
 	}
 }
 
+void Server::invite(std::string after, Client const& client) {
+	size_t space_pos = after.find_first_of(" ");
+	if (space_pos == std::string::npos) {
+		return client.Output(ERR_NEEDMOREPARAMS);
+	}
+
+	const std::string invitee_nick = after.substr(0, space_pos);
+	const std::string channel_name = after.substr(space_pos + 1);
+
+	std::vector<Channel>::iterator channel
+		= find_cnl(channel_name, _channels);
+	if (channel == _channels.end()) {
+		return client.Output(ERR_NOSUCHCHANNEL);
+	}
+	std::vector<Client>::iterator invitee
+		= findnick(invitee_nick, _clients);
+	if (invitee == _clients.end()) {
+		return client.Output(ERR_NOSUCHNICK(invitee_nick));
+	}
+
+	if (channel->findnick(invitee->_nickname)
+		!= channel->_clients_op.end()) {
+		client.Output(ERR_USERONCHANNEL(invitee_nick));
+		return;
+	}
+	if (!channel->is_operator(client)) {
+		if (channel->findnick(client._nickname)
+			== channel->_clients_op.end()) {
+			client.Output(ERR_CHANOPRIVSNEEDED);
+			return;
+		}
+		client.Output(ERR_NOTONCHANNEL);
+		return;
+	}
+	try {
+		channel->addUser(*invitee);
+	} catch (Channel::LimitReached) {
+		client.Output(ERR_CHANNELISFULL);
+	}
+	invitee->Output(INVITE);
+	client.Output(RPL_INVITING);
+}
+
 typedef enum e_modes {
 	INV_ONLY      = 'i',
 	KEY_SET       = 'k',
@@ -131,18 +259,6 @@ typedef enum e_modes {
 	TOPIC_PROTECT = 't',
 	LIMIT         = 'l',
 } MODES;
-
-// remove? @audit-info
-std::string get_additional_mode(std::string data) {
-	size_t pos = data.find_first_of(" ");
-	if (pos != 0 && pos != std::string::npos) {
-		pos = data.find_first_not_of(" ", pos);
-		if (pos != std::string::npos) {
-			return data.substr(pos);
-		}
-	}
-	return "";
-}
 
 // format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
 // "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
@@ -155,8 +271,7 @@ void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() > 3) { return; }
 	// @note handle error
-	std::vector<Channel>::iterator channel
-		= find_cnl(args[0], _channels);
+	ChannelIt channel = find_cnl(args[0], _channels);
 	if (channel == _channels.end()) { return; }
 	// @todo handle error, channel not existing, user not being member,...
 	if (!channel->is_operator(client)) { return; }
@@ -185,8 +300,11 @@ void Server::mode(std::string after, Client const& client) {
 
 	switch (to_mod) {
 	case INV_ONLY: {
+		channel->_is_invite_only = (op_todo == ADD);
 	}
 	case KEY_SET: {
+		channel->_key = (op_todo == ADD) ? args[2] : (op_todo == RM) ? "" : channel->_key;
+		return ;
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
@@ -218,13 +336,17 @@ void Server::executeCommand(Client const&      client,
 	if (data == "QUIT" || cmd == "QUIT") {
 		quit(after, client);
 	} else if (!after.empty()) {
-		if (cmd == "PRIVMSG") {
+		NormalizeChannelName(after);
+		if (cmd == "INVITE") {
+			invite(after, client);
+		} else if (cmd == "PRIVMSG") {
 			privmsg(after, client);
 		} else if (after[0] == '#' || after[0] == '&') {
 			cmd == "JOIN"    ? join(after, client)
 			: cmd == "TOPIC" ? topic(after, client)
 			: cmd == "MODE"  ? mode(after, client)
 			: cmd == "PART"  ? part(after, client)
+			: cmd == "KICK"  ? kick(after, client)
 							 : void();
 		}
 	}

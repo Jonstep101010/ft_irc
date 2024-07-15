@@ -40,8 +40,14 @@ public:
 	// removes client from channel
 	void part(std::string after, Client const& client);
 
+	// kick client from channel
+	void kick(std::string after, Client const& client);
+
 	// mode message (change multiple settings)
 	void mode(std::string after_cmd, Client const& client);
+
+	// invite a user to a channel
+	void invite(std::string after_cmd, Client const& client);
 
 	// signal and free
 	static void staticWrapperSignal(int sig);

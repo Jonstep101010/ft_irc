@@ -1,6 +1,43 @@
 #pragma once
+#include <algorithm>
+#include <sstream>
 #include <string>
 #include <vector>
+
+void NormalizeChannelName(std::string& after) {
+	std::string::size_type channelStartPos
+		= after.find_first_of("#&");
+
+	if (channelStartPos != std::string::npos) {
+		std::string::size_type channelEndPos
+			= after.find_first_of(" ", channelStartPos);
+
+		if (channelEndPos == std::string::npos) {
+			channelEndPos = after.length();
+		}
+
+		std::transform(after.begin() + channelStartPos,
+					   after.begin() + channelEndPos,
+					   after.begin() + channelStartPos,
+					   ::tolower);
+	}
+}
+
+std::string getComment(const std::vector<std::string>& args,
+					   const std::string&              nick) {
+	if (args.size() <= 2) { return ":" + nick; }
+
+	std::ostringstream oss;
+	if (args[2][0] != ':') { oss << ':'; }
+
+	for (size_t i = 2; i < args.size(); ++i) {
+		if (i > 2) {
+			oss << " ";
+		} // Add space before each word except the first
+		oss << args[i];
+	}
+	return oss.str();
+}
 
 std::string get_cmd(std::string data) {
 	size_t pos = data.find_first_of(" ");

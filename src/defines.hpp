@@ -3,6 +3,9 @@
 /**
  * @brief acknowledgement of a user joining a channel
  */
+
+#define MAX_INPUT 510
+
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \
 		+ client._ip /* client ip @note change */ + " JOIN "    \
@@ -75,3 +78,44 @@
 #define ERR_NOTONCHANNEL                                        \
 	"442 " + client._nickname + " " + channel_name              \
 		+ " :You're not on that channel" + "\r\n"
+
+#define ERR_USERNOTINCHANNEL                                    \
+	"441 " + kicked_user->_nickname + " " + channel_name        \
+		+ " :They aren't on that channel" + "\r\n"
+
+#define KICK_NOTICE                                             \
+	":" + client._nickname + "!" + client._name + "@"           \
+		+ client._ip + " KICK " + channel_name + " "            \
+		+ user_name + " " + comment + "\r\n"
+
+#define ERR_NOSUCHNICK(invitee_nick)                            \
+	":" + _server_ip + " 401 " + client._nickname + " "         \
+		+ invitee_nick + " :No such nick/channel\r\n"
+
+#define ERR_USERONCHANNEL(invitee_nick)                         \
+	":" + _server_ip + " 443 " + client._nickname + " "         \
+		+ invitee_nick + " " + channel->_name                   \
+		+ " :is already on channel\r\n"
+
+#define INVITE                                                  \
+	":" + client._nickname + " INVITE " + invitee->_nickname    \
+		+ " " + channel->_name + "\r\n"
+
+#define RPL_INVITING                                            \
+	"341 " + client._nickname + " " + invitee->_nickname + " "  \
+		+ channel->_name + "\r\n"
+
+#define ERR_INVITEONLYCHAN                                      \
+	"473 " + client._nickname + " " + channel_name              \
+		+ " :Cannot join channel (+i)\r\n"
+
+#define ERR_ERRONEUSNICKNAME(client)                            \
+	"432 * " + client._nickname + " :Erroneus nickname\r\n"
+
+#define ERR_CHANNELNAMETOOLONG                                  \
+	":" + _server_ip + " 403 " + client._nickname + " "         \
+		+ channel_name + " :Channel name is too long" + "\r\n"
+
+#define ERR_BADCHANNELKEY                                       \
+	"475 " + client._nickname + " " + channel_name              \
+		+ " :Cannot join channel (+k)\r\n"
