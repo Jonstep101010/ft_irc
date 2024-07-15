@@ -1,4 +1,5 @@
 #pragma once
+#include "Bot.hpp"
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "typedef.hpp"
@@ -102,4 +103,5 @@ private:
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
+	Bot                        _server_bot;
 };
