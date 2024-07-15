@@ -1,5 +1,4 @@
 #include "Server.hpp"
-#include "Bot.hpp"
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "debug.hpp"
