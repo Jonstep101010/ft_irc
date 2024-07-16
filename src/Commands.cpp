@@ -80,7 +80,7 @@ void Server::join(std::string   channel_name,
 		}
 		try {
 			to_join->addUser(client);
-		} catch (Channel::LimitReached) {
+		} catch (Channel::LimitReached&) {
 			client.Output(ERR_CHANNELISFULL);
 		}
 	}
@@ -252,7 +252,7 @@ void Server::invite(std::string after, Client const& client) {
 	}
 	try {
 		channel->addUser(*invitee);
-	} catch (Channel::LimitReached) {
+	} catch (Channel::LimitReached&) {
 		client.Output(ERR_CHANNELISFULL);
 	}
 	invitee->Output(INVITE);
@@ -308,6 +308,7 @@ void Server::mode(std::string after, Client const& client) {
 	switch (to_mod) {
 	case INV_ONLY: {
 		channel->_is_invite_only = (op_todo == ADD);
+		return;
 	}
 	case KEY_SET: {
 		channel->_key = (op_todo == ADD) ? args[2]
@@ -319,10 +320,12 @@ void Server::mode(std::string after, Client const& client) {
 		if (!args[2].empty()) {
 			channel->chmod_op(op_todo, args[2]);
 		}
+		return;
 		// @follow-up
 	}
 	case TOPIC_PROTECT: {
 		channel->_topic_protection = (op_todo == ADD);
+		return;
 	}
 	case LIMIT: {
 		if (op_todo == ADD) {
@@ -396,26 +399,42 @@ void Server::executeCommand(Client&            client,
 							std::string const& data) {
 	std::string cmd   = get_cmd(data);
 	std::string after = get_after_cmd(data);
+
+	if (data == "QUIT") { quit(after, client); }
 	if (cmd == "PONG") {
 		client._awaiting_pong = false;
 		debug(PONG, "Received from " + client._nickname);
 	}
-	if (cmd == "NICK") { nick(after, client); }
-	if (data == "QUIT" || cmd == "QUIT") {
-		quit(after, client);
-	} else if (!after.empty()) {
-		NormalizeChannelName(after);
-		if (cmd == "INVITE") {
-			invite(after, client);
-		} else if (cmd == "PRIVMSG") {
-			privmsg(after, client);
-		} else if (after[0] == '#' || after[0] == '&') {
-			cmd == "JOIN"    ? join(after, client)
-			: cmd == "TOPIC" ? topic(after, client)
-			: cmd == "MODE"  ? mode(after, client)
-			: cmd == "PART"  ? part(after, client)
-			: cmd == "KICK"  ? kick(after, client)
-							 : void();
-		}
+
+	bool is_channel = after[0] == '#' || after[0] == '&';
+	if (is_channel) { NormalizeChannelName(after); }
+
+	switch (string_to_enum(cmd)) {
+	case e_JOIN:
+		if (is_channel) { join(after, client); }
+		break;
+	case e_TOPIC:
+		if (is_channel) { topic(after, client); }
+		break;
+	case e_PART:
+		if (is_channel) { part(after, client); }
+		break;
+	case e_KICK:
+		if (is_channel) { kick(after, client); }
+		break;
+	case e_MODE:
+		if (is_channel) { mode(after, client); }
+		break;
+	case e_INVITE:
+		invite(after, client);
+		break;
+	case e_NICK:
+		nick(after, client);
+		break;
+	case e_PRIVMSG:
+		privmsg(after, client);
+		break;
+	case e_BAD_COMMAND:
+		break;
 	}
 }

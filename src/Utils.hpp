@@ -4,6 +4,30 @@
 #include <string>
 #include <vector>
 
+enum e_commands {
+	e_JOIN,
+	e_PRIVMSG,
+	e_TOPIC,
+	e_PART,
+	e_KICK,
+	e_MODE,
+	e_INVITE,
+	e_NICK,
+	e_BAD_COMMAND
+};
+
+e_commands string_to_enum(const std::string& cmd) {
+	if (cmd == "JOIN") { return e_JOIN; }
+	if (cmd == "PRIVMSG") { return e_PRIVMSG; }
+	if (cmd == "TOPIC") { return e_TOPIC; }
+	if (cmd == "PART") { return e_PART; }
+	if (cmd == "KICK") { return e_KICK; }
+	if (cmd == "MODE") { return e_MODE; }
+	if (cmd == "INVITE") { return e_INVITE; }
+	if (cmd == "NICK") { return e_NICK; }
+	return e_BAD_COMMAND;
+}
+
 void NormalizeChannelName(std::string& after) {
 	std::string::size_type channelStartPos
 		= after.find_first_of("#&");
