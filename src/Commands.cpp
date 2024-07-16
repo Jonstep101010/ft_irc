@@ -80,7 +80,7 @@ void Server::join(std::string   channel_name,
 		}
 		try {
 			to_join->addUser(client);
-		} catch (Channel::LimitReached) {
+		} catch (Channel::LimitReached&) {
 			client.Output(ERR_CHANNELISFULL);
 		}
 	}
@@ -251,7 +251,7 @@ void Server::invite(std::string after, Client const& client) {
 	}
 	try {
 		channel->addUser(*invitee);
-	} catch (Channel::LimitReached) {
+	} catch (Channel::LimitReached&) {
 		client.Output(ERR_CHANNELISFULL);
 	}
 	invitee->Output(INVITE);
@@ -307,6 +307,7 @@ void Server::mode(std::string after, Client const& client) {
 	switch (to_mod) {
 	case INV_ONLY: {
 		channel->_is_invite_only = (op_todo == ADD);
+		return;
 	}
 	case KEY_SET: {
 		channel->_key = (op_todo == ADD) ? args[2]
@@ -318,10 +319,12 @@ void Server::mode(std::string after, Client const& client) {
 		if (!args[2].empty()) {
 			channel->chmod_op(op_todo, args[2]);
 		}
+		return;
 		// @follow-up
 	}
 	case TOPIC_PROTECT: {
 		channel->_topic_protection = (op_todo == ADD);
+		return;
 	}
 	case LIMIT: {
 		if (op_todo == ADD) {
