@@ -1,5 +1,6 @@
 #include "Bot.hpp"
 #include "debug.hpp"
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -22,8 +23,18 @@ void Bot::helpBot(Server& server, const std::string& target) {
 void Bot::joke(Server& server, const std::string& target) {
 	debug(DEBUG, "joke command called");
 	std::vector<std::string> jokes;
-	jokes.push_back("First joke");
-	jokes.push_back("second joke");
+	jokes.push_back("Why don't scientists trust atoms? Because "
+					"they make up everything!");
+	jokes.push_back("Why did the scarecrow win an award? He was "
+					"outstanding in his field!");
+	jokes.push_back("Why don't eggs tell jokes? They'd crack "
+					"each other up!");
+	jokes.push_back("Why don't skeletons fight each other? They "
+					"don't have the guts!");
+	jokes.push_back("Why did the bicycle fall over? Because it "
+					"was two-tired!");
+	server.sendBotMessage(target,
+						  jokes.at(rand() % jokes.size()));
 }
 
 void Bot::initializeBot() {
@@ -35,8 +46,7 @@ void Bot::initializeBot() {
 void Bot::executeCommand(const std::string& command,
 						 Server&            server,
 						 const std::string& target) {
-	std::map<std::string, BotFunctions>::iterator it
-		= _botCommands.find(command);
+	BotFunction it = _botCommands.find(command);
 	if (it != _botCommands.end()) {
 		(this->*(it->second))(server, target);
 	} else {

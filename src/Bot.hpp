@@ -20,6 +20,9 @@ public:
 private:
 	typedef void (Bot::*BotFunctions)(Server&            server,
 									  const std::string& target);
+	// clang-format off
+	typedef std::map<std::string, BotFunctions>::iterator BotFunction;
+	// clang-format on
 	std::string                         _botNick;
 	std::map<std::string, BotFunctions> _botCommands;
 };
