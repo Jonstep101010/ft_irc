@@ -4,7 +4,7 @@
  * @brief acknowledgement of a user joining a channel
  */
 
-#define MAX_INPUT 510
+#define MAX_INPUT_MSG 510
 
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \

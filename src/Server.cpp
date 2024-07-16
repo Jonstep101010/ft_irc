@@ -17,6 +17,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <fcntl.h>
+#endif
+
 #define PORT 8080
 #define PING_INTERVAL 60
 
@@ -78,6 +82,13 @@ void Server::makeSocket() {
 		return;
 	}
 	int opt = 1;
+	#ifdef __APPLE__
+	if (fcntl(_server_socket, F_SETFL, O_NONBLOCK) < 0) {
+		std::cerr << "Error setting socket to non-blocking"
+				  << std::endl;
+		return;
+	}
+	#endif
 	if (setsockopt(_server_socket, SOL_SOCKET,
 				   SO_REUSEADDR | SO_REUSEPORT, &opt,
 				   sizeof(opt))
@@ -155,7 +166,7 @@ void Server::pingClients() {
 }
 
 void Server::handleClientData(Client& client) {
-	char    buffer[MAX_INPUT];
+	char    buffer[MAX_INPUT_MSG];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
