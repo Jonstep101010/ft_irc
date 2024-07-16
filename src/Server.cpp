@@ -3,6 +3,7 @@
 #include "Client.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstddef>
@@ -269,7 +270,20 @@ void Server::sendBotMessage(const std::string& targetNick,
 				= fullMessage + line + "\r\n";
 			it->Output(lineMessage);
 		}
-	} else {
+	} else if (targetNick[0] == '#') {
+		ChannelIt cnl_it = find_cnl(targetNick, _channels);
+		if (cnl_it != _channels.end()) {
+			std::string fullMessage
+				= ":BotNice!bot@" + _server_ip + " PRIVMSG "
+				+ targetNick + " :" + message + "\r\n";
+			for (ClientOpIt op_it = cnl_it->_clients_op.begin();
+				 op_it != cnl_it->_clients_op.end(); op_it++) {
+				op_it->first.Output(fullMessage);
+			}
+		}
+	}
+
+	else {
 		debug(WARNING, "Target nick not found: " + targetNick);
 	}
 }

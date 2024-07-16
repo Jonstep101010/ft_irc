@@ -13,9 +13,13 @@ public:
 	void initializeBot();
 	void helpBot(Server& server, const std::string& target);
 	void joke(Server& server, const std::string& target);
+	void roll(Server& server, const std::string& target,
+			  const std::string& command,
+			  const std::string& channel_name);
 	void executeCommand(const std::string& command,
 						Server&            server,
-						const std::string& target);
+						const std::string& target,
+						const std::string& channel_name);
 
 private:
 	typedef void (Bot::*BotFunctions)(Server&            server,
