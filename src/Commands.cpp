@@ -282,6 +282,10 @@ void Server::mode(std::string after, Client const& client) {
 	if (channel == _channels.end()) { return; }
 	// @todo handle error, channel not existing, user not being member,...
 	if (!channel->is_operator(client)) { return; }
+	if (args.size() < 2) {
+		client.Output(ERR_NEEDMOREPARAMS);
+		return;
+	}
 	// args[0] = channel_name
 	if ((args[1][0] != ADD && args[1][0] != RM)
 		|| !strchr("ikotl", args[1][1]) || args[1][2]) {
