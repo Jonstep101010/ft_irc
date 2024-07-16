@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++-17)
 
 # Add the executable target
-file(GLOB sources main.cpp)
+file(GLOB sources src/main.cpp)
 add_executable(IRC "")
 target_link_libraries(IRC PUBLIC libIRC)
 target_include_directories(IRC PUBLIC ./src)
