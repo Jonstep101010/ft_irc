@@ -3,6 +3,8 @@
 
 # Make an automatic library - will be static or dynamic based on user setting
 file(GLOB sources *.hpp *.cpp)
+# remove main.cpp from sources
+list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
 add_library(libIRC SHARED ${sources} ${HEADER_LIST})
 
