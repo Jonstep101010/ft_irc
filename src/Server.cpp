@@ -171,7 +171,7 @@ void Server::handleClientData(Client& client) {
 }
 
 void Server::processClientBuffer(Client& client) {
-	size_t pos;
+	size_t pos = 0;
 	while ((pos = client._inputBuffer.find("\r\n"))
 		   != std::string::npos) {
 		std::string message = client._inputBuffer.substr(0, pos);
@@ -209,6 +209,7 @@ void Server::handlePassCommand(Client&     client,
 							   std::string password) {
 	if (password == _server_pass) {
 		debug(CLIENT, "Password correct");
+		client._LoggedIn = true;
 	} else if (password.empty()) {
 		client.Output(ERR_NEEDMOREPARAMS);
 	} else {
@@ -239,8 +240,12 @@ void Server::handleInitialConnection(
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
 		if (checkIfAlreadyConnected(client)) { return; }
-		client.Output(WELCOME_MESSAGE);
 		client._isConnected = true;
+	}
+	if (client._isConnected && !client._LoggedIn) {
+		quit("", client);
+	} else if (client._isConnected && client._LoggedIn) {
+		client.Output(WELCOME_MESSAGE);
 	}
 }
 

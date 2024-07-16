@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "Server.hpp"
 #include <csignal>
+#include <cstddef>
 #include <cstdlib>
 #include <sys/poll.h>
 #include <unistd.h>
@@ -44,6 +45,10 @@ int main(int argc, char* argv[]) {
 		std::cerr
 			<< "Error: Port number out of valid range (1-65535)."
 			<< std::endl;
+		return 1;
+	}
+	if (std::string(argv[2]).empty()) {
+		std::cerr << "Error: Password empty" << std::endl;
 		return 1;
 	}
 
