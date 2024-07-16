@@ -9,6 +9,7 @@
 
 class Client;
 class Channel;
+class Bot;
 
 class Server {
 public:
@@ -22,6 +23,10 @@ public:
 	void makeSocket();
 	void start();
 	void acceptConnection(int listeningSocket);
+
+	// send bot message
+	void sendBotMessage(const std::string& targetNick,
+						const std::string& message);
 
 	// manage commands passed by clients @follow-up
 	void executeCommand(Client& client, std::string const& data);
@@ -103,5 +108,5 @@ private:
 	std::vector<Client>        _clients;
 	std::vector<Channel>       _channels;
 	std::vector<struct pollfd> _pollfds;
-	Bot                        _server_bot;
+	Bot*                       _server_bot;
 };
