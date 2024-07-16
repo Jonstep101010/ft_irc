@@ -51,7 +51,7 @@
 	":" + _server_ip + " 471 " + client._nickname + " "         \
 		+ channel_name + " :Cannot join channel (+l)\r\n"
 
-#define RPL_TOPIC                                               \
+#define RPL_TOPIC(channel)                                      \
 	":" + _server_ip + " 332 " + client._nickname + " "         \
 		+ channel_name + " :" + channel->_topic + "\r\n"
 
@@ -61,8 +61,9 @@
 #define ERR_PASSWDMISMATCH                                      \
 	":" + _server_ip + " 464 * :Password incorrect\r\n"
 
-#define ERR_NEEDMOREPARAMS                                      \
-	":" + _server_ip + " 461 * PASS :Not enough parameters\r\n"
+#define ERR_NEEDMOREPARAMS(cmd)                                 \
+	":" + _server_ip + " 461 * " + cmd                          \
+		+ " :Not enough parameters\r\n"
 
 // :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
 #define PART_REPLY(client, current_channel_name)                \
@@ -106,7 +107,7 @@
 		+ channel->_name + "\r\n"
 
 #define ERR_INVITEONLYCHAN                                      \
-	"473 " + client._nickname + " " + channel_name              \
+	":" + _server_ip + " 473  * JOIN"                           \
 		+ " :Cannot join channel (+i)\r\n"
 
 #define ERR_ERRONEUSNICKNAME(client)                            \
@@ -118,7 +119,7 @@
 		+ channel_name + " :Channel name is too long" + "\r\n"
 
 #define ERR_BADCHANNELKEY                                       \
-	"475 " + client._nickname + " " + channel_name              \
+	":" + _server_ip + " 461 * JOIN"                            \
 		+ " :Cannot join channel (+k)\r\n"
 
 #define ERR_NONICKNAMEGIVEN                                     \

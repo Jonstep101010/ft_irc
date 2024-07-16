@@ -68,7 +68,7 @@ std::string get_cmd(std::string data) {
 	if (pos != std::string::npos) {
 		return std::string(data.std::string::substr(0, pos));
 	}
-	return "";
+	return data;
 }
 
 std::string get_after_cmd(std::string data) {

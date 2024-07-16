@@ -42,6 +42,11 @@
  */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
+	if (channel_name.length() < 2 || channel_name == "#"
+		|| channel_name == "&") {
+		client.Output(ERR_NEEDMOREPARAMS(std::string("JOIN")));
+		return;
+	}
 	if (channel_name == "#0" || channel_name == "&0") {
 		for (ChannelIt it = _channels.begin();
 			 it != _channels.end(); ++it) {
@@ -77,9 +82,13 @@ void Server::join(std::string   channel_name,
 		}
 		if (to_join->_is_invite_only) {
 			client.Output(ERR_INVITEONLYCHAN);
+			return;
 		}
 		try {
 			to_join->addUser(client);
+			if (!to_join->_topic.empty()) {
+				client.Output(RPL_TOPIC(to_join));
+			}
 		} catch (Channel::LimitReached&) {
 			client.Output(ERR_CHANNELISFULL);
 		}
@@ -163,7 +172,7 @@ void Server::part(std::string after, Client const& client) {
 void Server::kick(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() < 2) {
-		client.Output(ERR_NEEDMOREPARAMS);
+		client.Output(ERR_NEEDMOREPARAMS(std::string("KICK")));
 		return;
 	}
 	const std::string channel_name = args[0];
@@ -205,8 +214,9 @@ void Server::topic(std::string after, Client const& client) {
 	if (new_topic.empty()
 		&& after[after.find_first_of(" ") + 1] != ':') {
 		// only single channel is given as argument, possible postfix of space
-		channel->_topic.empty() ? client.Output(RPL_NOTOPIC)
-								: client.Output(RPL_TOPIC);
+		channel->_topic.empty()
+			? client.Output(RPL_NOTOPIC)
+			: client.Output(RPL_TOPIC(channel));
 	} else {
 		!channel->_topic_protection
 				|| channel->is_operator(client)
@@ -217,10 +227,10 @@ void Server::topic(std::string after, Client const& client) {
 
 void Server::invite(std::string after, Client const& client) {
 	size_t space_pos = after.find_first_of(" ");
-	if (space_pos == std::string::npos) {
-		return client.Output(ERR_NEEDMOREPARAMS);
+	if (space_pos == std::string::npos || after == " ") {
+		return client.Output(
+			ERR_NEEDMOREPARAMS(std::string("INVITE")));
 	}
-
 	const std::string invitee_nick = after.substr(0, space_pos);
 	const std::string channel_name = after.substr(space_pos + 1);
 
@@ -404,25 +414,31 @@ void Server::executeCommand(Client&            client,
 		client._awaiting_pong = false;
 		debug(PONG, "Received from " + client._nickname);
 	}
-
-	bool is_channel = after[0] == '#' || after[0] == '&';
-	if (is_channel) { NormalizeChannelName(after); }
-
+	bool isChannel = after[0] == '#' || after[0] == '&';
+	if (isChannel) { NormalizeChannelName(after); }
 	switch (string_to_enum(cmd)) {
 	case e_JOIN:
-		if (is_channel) { join(after, client); }
+		if (isChannel) {
+			join(after, client); // all replies work
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
 	case e_TOPIC:
-		if (is_channel) { topic(after, client); }
+		if (isChannel) {
+			topic(after, client); // all replies work
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
 	case e_PART:
-		if (is_channel) { part(after, client); }
+		part(after, client);
 		break;
 	case e_KICK:
-		if (is_channel) { kick(after, client); }
+		kick(after, client);
 		break;
 	case e_MODE:
-		if (is_channel) { mode(after, client); }
+		mode(after, client);
 		break;
 	case e_INVITE:
 		invite(after, client);

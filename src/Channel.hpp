@@ -27,7 +27,9 @@ public:
 		, _topic_protection() {}
 
 	Channel()
-		: _limit(-1), _is_invite_only(), _topic_protection() {}
+		: _limit(-1)
+		, _is_invite_only()
+		, _topic_protection() {}
 
 	Channel(const Channel& src)
 		: _name(src._name)

@@ -207,7 +207,7 @@ void Server::handlePassCommand(Client&     client,
 	if (password == _server_pass) {
 		debug(CLIENT, "Password correct");
 	} else if (password.empty()) {
-		client.Output(ERR_NEEDMOREPARAMS);
+		client.Output(ERR_NEEDMOREPARAMS(std::string("PASS")));
 	} else {
 		client.Output(ERR_PASSWDMISMATCH);
 		this->quit("", client);
