@@ -3,6 +3,7 @@
 #include "Client.hpp"
 #include "debug.hpp"
 #include "defines.hpp"
+#include "typedef.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstddef>
@@ -28,7 +29,8 @@ Server::Server()
 	: _running(true)
 	, _server_socket(-1)
 	, _port(PORT)
-	, _server_ip("not set") {
+	, _server_ip("not set")
+	, _server_bot(new Bot()) {
 	instance = this;
 }
 Server::Server(int port, std::string password)
@@ -36,7 +38,8 @@ Server::Server(int port, std::string password)
 	, _server_socket(-1)
 	, _port(port)
 	, _server_ip("not set")
-	, _server_pass(password) {
+	, _server_pass(password)
+	, _server_bot(new Bot()) {
 	instance = this;
 }
 
@@ -54,6 +57,7 @@ Server::Server(const Server& src)
 
 Server::~Server() {
 	if (_server_socket >= 0) { close(_server_socket); }
+	delete _server_bot;
 }
 
 /*
@@ -168,7 +172,7 @@ void Server::handleClientData(Client& client) {
 }
 
 void Server::processClientBuffer(Client& client) {
-	size_t pos;
+	size_t pos = 0;
 	while ((pos = client._inputBuffer.find("\r\n"))
 		   != std::string::npos) {
 		std::string message = client._inputBuffer.substr(0, pos);
@@ -206,6 +210,7 @@ void Server::handlePassCommand(Client&     client,
 							   std::string password) {
 	if (password == _server_pass) {
 		debug(CLIENT, "Password correct");
+		client._LoggedIn = true;
 	} else if (password.empty()) {
 		client.Output(ERR_NEEDMOREPARAMS(std::string("PASS")));
 	} else {
@@ -236,8 +241,12 @@ void Server::handleInitialConnection(
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
 		if (checkIfAlreadyConnected(client)) { return; }
-		client.Output(WELCOME_MESSAGE);
 		client._isConnected = true;
+	}
+	if (client._isConnected && !client._LoggedIn) {
+		quit("", client);
+	} else if (client._isConnected && client._LoggedIn) {
+		client.Output(WELCOME_MESSAGE);
 	}
 }
 
@@ -245,6 +254,38 @@ std::string toString(int value) {
 	std::ostringstream oss;
 	oss << value;
 	return oss.str();
+}
+
+void Server::sendBotMessage(const std::string& targetNick,
+							const std::string& message) {
+	ClientIt it = findnick(targetNick, _clients);
+	if (it != _clients.end()) {
+		std::string fullMessage = ":BotNice!bot@" + _server_ip
+								+ " PRIVMSG " + targetNick
+								+ " :";
+		std::istringstream iss(message);
+		std::string        line;
+		while (std::getline(iss, line, '\n')) {
+			std::string lineMessage
+				= fullMessage + line + "\r\n";
+			it->Output(lineMessage);
+		}
+		return;
+	}
+	if (targetNick[0] == '#' || targetNick[0] == '&') {
+		ChannelIt cnl_it = find_cnl(targetNick, _channels);
+		if (cnl_it != _channels.end()) {
+			std::string fullMessage
+				= ":BotNice!bot@" + _server_ip + " PRIVMSG "
+				+ targetNick + " :" + message + "\r\n";
+			for (ClientOpIt op_it = cnl_it->_clients_op.begin();
+				 op_it != cnl_it->_clients_op.end(); op_it++) {
+				op_it->first.Output(fullMessage);
+			}
+		}
+	} else {
+		debug(WARNING, "Target nick not found: " + targetNick);
+	}
 }
 /*
 @remind The user should be able to choose on which port and ip address to start the server
