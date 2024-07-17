@@ -65,23 +65,22 @@
 	":" + _server_ip + " 461 * " + cmd                          \
 		+ " :Not enough parameters\r\n"
 
-// :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
+// :john!username@hostname PART #test :Goodbye!
 #define PART_REPLY(client, current_channel_name)                \
 	":" + client._nickname + "!" + client._name + "@"           \
 		+ client._ip + " PART " + current_channel_name + "\r\n"
 
 // "<channel name> :No such channel"
 #define ERR_NOSUCHCHANNEL                                       \
-	"403 " + client._nickname + " " + channel_name              \
-		+ " :No such channel" + "\r\n"
+	":" + _server_ip + " 403  * PART" + " :No such channel\r\n"
 
 // "<client name> <channel name> :You're not on that channel"
 #define ERR_NOTONCHANNEL                                        \
-	"442 " + client._nickname + " " + channel_name              \
-		+ " :You're not on that channel" + "\r\n"
+	":" + _server_ip + " 442  * PART"                           \
+		+ " :You aren't on that channel\r\n"
 
 #define ERR_USERNOTINCHANNEL                                    \
-	"441 " + kicked_user->_nickname + " " + channel_name        \
+	":" + _server_ip + " 441 " + user_name                      \
 		+ " :They aren't on that channel" + "\r\n"
 
 #define KICK_NOTICE                                             \

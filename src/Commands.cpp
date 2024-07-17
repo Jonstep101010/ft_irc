@@ -417,39 +417,44 @@ void Server::executeCommand(Client&            client,
 	bool isChannel = after[0] == '#' || after[0] == '&';
 	if (isChannel) { NormalizeChannelName(after); }
 	switch (string_to_enum(cmd)) {
-	case e_JOIN:
+	case JOIN:
 		if (isChannel) {
 			join(after, client); // all replies work
 		} else {
 			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
 		break;
-	case e_TOPIC:
+	case TOPIC:
 		if (isChannel) {
 			topic(after, client); // all replies work
 		} else {
 			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
 		break;
-	case e_PART:
-		part(after, client);
+	case PART:
+		if (isChannel) {
+			part(after, client);
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(
+				cmd)); // all replies work (irssi for reason info)
+		}
 		break;
-	case e_KICK:
+	case KICK:
 		kick(after, client);
 		break;
-	case e_MODE:
+	case MODE:
 		mode(after, client);
 		break;
-	case e_INVITE:
+	case INVITE_:
 		invite(after, client);
 		break;
-	case e_NICK:
+	case NICK:
 		nick(after, client);
 		break;
-	case e_PRIVMSG:
+	case PRIVMSG:
 		privmsg(after, client);
 		break;
-	case e_BAD_COMMAND:
+	case BAD_COMMAND:
 		break;
 	}
 }
