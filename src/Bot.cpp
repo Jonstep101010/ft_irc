@@ -44,8 +44,7 @@ void Bot::joke(Server& server, const std::string& target) {
 std::string get_params(std::string data) {
 	size_t pos = data.find_first_of(" ");
 	if (pos != std::string::npos) {
-		return data.std::string::substr(
-			pos + 1, data.find_first_of(" ") - 1);
+		return data.substr(pos + 1);
 	}
 	return "";
 }
@@ -60,7 +59,7 @@ void Bot::roll(Server& server, const std::string& target,
 
 	std::istringstream iss(params);
 	char               d = 0;
-	if ((iss >> dice >> d >> sides) != 0) {
+	if (iss >> dice >> d >> sides) {
 		if (d != 'd' && d != 'D') {
 			server.sendBotMessage(
 				target, "Usage: !roll [NdM] (e.g., !roll 2d6)");
