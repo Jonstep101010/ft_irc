@@ -90,16 +90,16 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
-	// @follow-up check if the message is a bot message
 	if (dest[0] == '#' || dest[0] == '&') {
-		if (message[0] == '!') {
-			_server_bot->executeCommand(message, *this,
-										client._nickname);
-		}
 		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
+		}
+		if (message[0] == '!') {
+			_server_bot->executeCommand(message, *this,
+										client._nickname,
+										dest_channel->_name);
 		}
 	} else {
 		ClientIt dest_client = Server::findnick(dest, _clients);
