@@ -1,4 +1,4 @@
-NAME = ft_irc
+NAME = ircserv
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 SRC = $(wildcard src/*.cpp)
