@@ -270,7 +270,9 @@ void Server::sendBotMessage(const std::string& targetNick,
 				= fullMessage + line + "\r\n";
 			it->Output(lineMessage);
 		}
-	} else if (targetNick[0] == '#') {
+		return;
+	}
+	if (targetNick[0] == '#' || targetNick[0] == '&') {
 		ChannelIt cnl_it = find_cnl(targetNick, _channels);
 		if (cnl_it != _channels.end()) {
 			std::string fullMessage
@@ -281,9 +283,7 @@ void Server::sendBotMessage(const std::string& targetNick,
 				op_it->first.Output(fullMessage);
 			}
 		}
-	}
-
-	else {
+	} else {
 		debug(WARNING, "Target nick not found: " + targetNick);
 	}
 }

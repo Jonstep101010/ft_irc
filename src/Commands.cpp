@@ -90,7 +90,6 @@ void Server::privmsg(std::string after, Client const& client) {
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
-	// @follow-up check if the message is a bot message
 	if (dest[0] == '#' || dest[0] == '&') {
 		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);

@@ -15,10 +15,12 @@ Bot::~Bot() {}
 void Bot::helpBot(Server& server, const std::string& target) {
 	debug(DEBUG, "help command called");
 	std::string helpList
-		= "!help - Send you a private message "
+		= "---------HELP----------\n"
+		  "!help - Send you a private message "
 		  "with all commands\n"
 		  "!joke - Tells a joke for you\n"
-		  "!roll [NdM] (e.g., !roll 2d6) - Rolling dice";
+		  "!roll [NdM] (e.g., !roll 2d6) - Rolling dice\n"
+		  "--------END-HELP-------";
 	server.sendBotMessage(target, helpList);
 }
 
@@ -58,7 +60,7 @@ void Bot::roll(Server& server, const std::string& target,
 
 	std::istringstream iss(params);
 	char               d = 0;
-	if (iss >> dice >> d >> sides) {
+	if ((iss >> dice >> d >> sides) != 0) {
 		if (d != 'd' && d != 'D') {
 			server.sendBotMessage(
 				target, "Usage: !roll [NdM] (e.g., !roll 2d6)");
@@ -86,13 +88,11 @@ void Bot::roll(Server& server, const std::string& target,
 		int roll = (rand() % sides) + 1;
 		total += roll;
 		result << roll;
-		if (i < dice - 1) result << ", ";
+		if (i < dice - 1) { result << ", "; }
 	}
 
 	result << ". Total: " << total;
 	server.sendBotMessage(channel_name, result.str());
-	// debug(ERROR, params);
-	// server.sendBotMessage(target, "I will roll the dice chief");
 }
 
 void Bot::initializeBot() {
@@ -100,7 +100,6 @@ void Bot::initializeBot() {
 	_botCommands["!joke"] = &Bot::joke;
 }
 
-// @follow-up We might need to pass also the client and the server
 void Bot::executeCommand(const std::string& command,
 						 Server&            server,
 						 const std::string& target,
