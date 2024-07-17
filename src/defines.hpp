@@ -58,6 +58,7 @@
 #define ERR_CHANOPRIVSNEEDED                                    \
 	":" + _server_ip + " 482 " + client._nickname + " "         \
 		+ channel_name + " :You're not channel operator\r\n"
+
 #define ERR_PASSWDMISMATCH                                      \
 	":" + _server_ip + " 464 * :Password incorrect\r\n"
 
@@ -71,15 +72,15 @@
 		+ client._ip + " PART " + current_channel_name + "\r\n"
 
 // "<channel name> :No such channel"
-#define ERR_NOSUCHCHANNEL                                       \
-	":" + _server_ip + " 403  * PART" + " :No such channel\r\n"
+#define ERR_NOSUCHCHANNEL(cmd)                                  \
+	":" + _server_ip + " 403  * " + cmd + " :No such channel\r\n"
 
 // "<client name> <channel name> :You're not on that channel"
 #define ERR_NOTONCHANNEL                                        \
 	":" + _server_ip + " 442  * PART"                           \
 		+ " :You aren't on that channel\r\n"
 
-#define ERR_USERNOTINCHANNEL                                    \
+#define ERR_USERNOTINCHANNEL(_server_ip, user_name)             \
 	":" + _server_ip + " 441 " + user_name                      \
 		+ " :They aren't on that channel" + "\r\n"
 
@@ -132,3 +133,12 @@
 #define NICK_REPLY                                              \
 	":" + oldNick + "!" + client._name + "@" + client._ip       \
 		+ " NICK " + after + "\r\n"
+
+#define ERR_KEYSET                                              \
+	":" + _server_ip + " 467 " + client._nickname               \
+		+ " :Channel key already set\r\n"
+
+#define ERR_UNKNOWNMODE(_char)                                  \
+	":" + _server_ip + " 472 " + client._nickname + " " + _char \
+		+ " :is unknown mode char to me for " + channel_name    \
+		+ "\r\n"

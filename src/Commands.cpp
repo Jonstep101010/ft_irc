@@ -148,7 +148,7 @@ void Server::part(std::string after, Client const& client) {
 	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
 	if (at_channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL);
+		client.Output(ERR_NOSUCHCHANNEL("PART"));
 	} else {
 		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
@@ -181,7 +181,7 @@ void Server::kick(std::string after, Client const& client) {
 		= getComment(args, client._nickname);
 	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL);
+		client.Output(ERR_NOSUCHCHANNEL("KICK"));
 		return;
 	}
 	if (!channel->is_operator(client)) {
@@ -195,7 +195,8 @@ void Server::kick(std::string after, Client const& client) {
 	}
 	ClientIt kicked_user = Server::findnick(user_name, _clients);
 	if (kicked_user == _clients.end()) {
-		client.Output(ERR_USERNOTINCHANNEL);
+		client.Output(
+			ERR_USERNOTINCHANNEL(_server_ip, user_name));
 		return;
 	}
 	channel->Message(client, KICK_NOTICE);
@@ -237,7 +238,7 @@ void Server::invite(std::string after, Client const& client) {
 	std::vector<Channel>::iterator channel
 		= find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		return client.Output(ERR_NOSUCHCHANNEL);
+		return client.Output(ERR_NOSUCHCHANNEL("INVITE"));
 	}
 	std::vector<Client>::iterator invitee
 		= findnick(invitee_nick, _clients);
@@ -285,20 +286,33 @@ typedef enum e_modes {
 // "MODE #channel_name +t" -> ["#channel_name", "+t"]
 void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
-	if (args.size() > 3) { return; }
-	// @note handle error
+	if (args.size() != 3) {
+		if (args.size() <= 2) {
+			client.Output(
+				ERR_NEEDMOREPARAMS(std::string("MODE")));
+			return;
+		}
+		if (args[1][1] != 0
+			&& strchr("litk", args[1][1]) == NULL) {
+			client.Output(
+				ERR_NEEDMOREPARAMS(std::string("MODE")));
+			return;
+		}
+	}
 	ChannelIt channel = find_cnl(args[0], _channels);
-	if (channel == _channels.end()) { return; }
-	// @todo handle error, channel not existing, user not being member,...
-	if (!channel->is_operator(client)) { return; }
-	// args[0] = channel_name
-	if ((args[1][0] != ADD && args[1][0] != RM)
-		|| !strchr("ikotl", args[1][1]) || args[1][2]) {
+	if (channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL("MODE"));
 		return;
 	}
-	if (args.size() == 3 && args[1][1] != 'k'
-		&& args[1][1] != 'l' && args[1][1] != 'o') {
-		// invalid number of arguments
+	std::string channel_name = args[0];
+	if (!channel->is_operator(client)) {
+		client.Output(ERR_CHANOPRIVSNEEDED);
+		return;
+	}
+	if ((args[1][0] != ADD && args[1][0] != RM)
+		|| (strchr("ikotl", args[1][1]) == 0)
+		|| (args[1][2] != 0)) {
+		client.Output(ERR_UNKNOWNMODE(args[1]));
 		return;
 	}
 	debug(DEBUG, "MODE vec[0]'" + args[0] + "'");
@@ -306,9 +320,6 @@ void Server::mode(std::string after, Client const& client) {
 	if (args.size() == 3) {
 		debug(DEBUG, "MODE vec[2]'" + args[2] + "'");
 	}
-	// @note priviledged access
-	// @follow-up more sophisticated parsing/checking
-	// @todo handle error
 	MODE_OP op_todo
 		= static_cast<MODE_OP>(static_cast<int>(args[1][0]));
 	MODES to_mod
@@ -320,6 +331,12 @@ void Server::mode(std::string after, Client const& client) {
 		return;
 	}
 	case KEY_SET: {
+		if (!channel->_key.empty()) {
+			if (op_todo == ADD) {
+				client.Output(ERR_KEYSET);
+				return;
+			}
+		}
 		channel->_key = (op_todo == ADD) ? args[2]
 					  : (op_todo == RM)  ? ""
 										 : channel->_key;
@@ -327,10 +344,10 @@ void Server::mode(std::string after, Client const& client) {
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
-			channel->chmod_op(op_todo, args[2]);
+			channel->chmod_op(op_todo, args[2], client,
+							  _server_ip);
 		}
 		return;
-		// @follow-up
 	}
 	case TOPIC_PROTECT: {
 		channel->_topic_protection = (op_todo == ADD);
@@ -440,10 +457,14 @@ void Server::executeCommand(Client&            client,
 		}
 		break;
 	case KICK:
-		kick(after, client);
+		kick(after, client); // all replies work
 		break;
 	case MODE:
-		mode(after, client);
+		if (isChannel) {
+			mode(after, client); // all replies work
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
 	case INVITE_:
 		invite(after, client);
