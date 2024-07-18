@@ -53,10 +53,15 @@ void Server::join(std::string   channel_name,
 		new_cnl._clients_op[0].second = true;
 		_channels.push_back(new_cnl);
 	} else {
-		if (!to_join->_key.empty()
-			&& to_join->_key != name_key[1]) {
-			client.Output(ERR_BADCHANNELKEY);
-			return;
+		if (!to_join->_key.empty()) {
+			if (name_key.size() < 2) {
+				client.Output(ERR_BADCHANNELKEY);
+				return;
+			}
+			if (to_join->_key != name_key[1]) {
+				client.Output(ERR_BADCHANNELKEY);
+				return;
+			}
 		}
 		if (to_join->_is_invite_only) {
 			client.Output(ERR_INVITEONLYCHAN(to_join->_name));
