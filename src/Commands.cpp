@@ -69,7 +69,6 @@ void Server::join(std::string   channel_name,
 		return;
 	}
 	if (to_join == _channels.end()) {
-		// can a channel be created with a key? @aceauses @follow-up
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
 		new_cnl._clients_op[0].second = true;
@@ -468,14 +467,14 @@ void Server::executeCommand(Client&            client,
 	switch (string_to_enum(cmd)) {
 	case JOIN:
 		if (isChannel) {
-			join(after, client); // all replies work
+			join(after, client);
 		} else {
 			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
 		break;
 	case TOPIC:
 		if (isChannel) {
-			topic(after, client); // all replies work
+			topic(after, client);
 		} else {
 			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
@@ -484,28 +483,27 @@ void Server::executeCommand(Client&            client,
 		if (isChannel) {
 			part(after, client);
 		} else {
-			client.Output(ERR_NEEDMOREPARAMS(
-				cmd)); // all replies work (irssi for reason info)
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
 		break;
 	case KICK:
-		kick(after, client); // all replies work
+		kick(after, client);
 		break;
 	case MODE:
 		if (isChannel) {
-			mode(after, client); // all replies work
+			mode(after, client);
 		} else {
 			client.Output(ERR_NEEDMOREPARAMS(cmd));
 		}
 		break;
 	case INVITE_:
-		invite(after, client); // all replies work
+		invite(after, client);
 		break;
 	case NICK:
-		nick(after, client); // all replies work
+		nick(after, client);
 		break;
 	case PRIVMSG:
-		privmsg(after, client); // all replies work
+		privmsg(after, client);
 		break;
 	case BAD_COMMAND:
 		break;
