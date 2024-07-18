@@ -21,4 +21,4 @@ fclean: clean
 re: fclean all
 
 up: all
-	@./$(NAME) 8989 test
+	@./$(NAME) 9191 test

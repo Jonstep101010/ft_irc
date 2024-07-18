@@ -60,8 +60,6 @@ public:
 
 	void setTopic(std::string& new_topic);
 
-	void setMode(std::string const& mode);
-
 	void chmod_op(MODE_OP change, std::string const& nick,
 				  Client const&      client,
 				  std::string const& server_ip) {

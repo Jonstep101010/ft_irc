@@ -18,13 +18,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define PORT 8080
 #define PING_INTERVAL 60
 
 Server::Server()
 	: _running(true)
 	, _server_socket(-1)
-	, _port(PORT)
+	, _port()
 	, _server_ip("not set")
 	, _server_bot(new Bot()) {
 	instance = this;
@@ -42,7 +41,7 @@ Server::Server(int port, std::string password)
 Server::Server(const Server& src)
 	: _running()
 	, _server_socket()
-	, _port(PORT)
+	, _port()
 	, _server_ip("not set") {
 	*this = src;
 }
