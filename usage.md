@@ -2,13 +2,13 @@
 ### launch server
 ```shell
 # ./ircserv <port> <password>
-./ircserv 8989 test
+./ircserv 9191 test
 ```
 ### connect
 ```shell
 # nc -C <ip> <port>
 # `-C` tells nc to send CRLF (`\r\n`) line terminations
-nc -C localhost 8989
+nc -C localhost 9191
 ```
 ### authenticate
 ```shell
@@ -32,11 +32,36 @@ PING netcat
 # respond with `PONG `
 PONG 
 ```
-
-## irssi client: DCC
+### send a message
+`PRIVMSG <nick/#channel> :<message>`
+```shell
+# send a message to the client with the nickname bob
+PRIVMSG bob :Hello, World!
+# send a message to the channel `potato-lovers`
+PRIVMSG #potato-lovers :Hello, World!
+```
+## IRSSI client
+### connect to server
+#### optional: using config
+```shell
+# located at `~/.irssi/config`
+# copy config after launching irssi the first time (to create ~/.irssi directory)
+cp ./config ~/.irssi/config
+```
+#### connect with launch arguments
+```shell
+# irssi -c <ip> -p <port> -w <password>
+irssi -c localhost -p 9191 -w test
+```
+### file transfer using DCC
 ```shell
 # user one sends a PRIVMSG offering up the file to user two
-Alice: `/dcc SEND Bob filename`
+/dcc SEND Bob filename
 # user two accepts the file from user one
-Bob: `/dcc GET Alice`
+/dcc GET Alice
+```
+### channels only: bot usage
+```shell
+# get the commands available
+!help
 ```
