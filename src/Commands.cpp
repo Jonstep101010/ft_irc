@@ -92,8 +92,6 @@ void Server::join(std::string   channel_name,
 			client.Output(ERR_CHANNELISFULL);
 		}
 	}
-	std::cout << "Client " << client._nickname
-			  << " joined channel " << channel_name << std::endl;
 }
 
 void Server::privmsg(std::string after, Client const& client) {
@@ -117,17 +115,8 @@ void Server::privmsg(std::string after, Client const& client) {
 		}
 		if (dest_channel->findnick(client._nickname)
 			== dest_channel->_clients_op.end()) {
-			client.Output(ERR_NOTONCHANNEL);
+			client.Output(ERR_NOTONCHANNEL("PRIVMSG"));
 			return;
-		}
-		if (dest_channel->_is_invite_only) {
-			if (!dest_channel->is_operator(client)
-				|| dest_channel->findnick(client._nickname)
-					   == dest_channel->_clients_op.end()) {
-				client.Output(
-					ERR_CANNOTSENDTOCHAN(dest_channel->_name));
-				return;
-			}
 		}
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
@@ -190,7 +179,7 @@ void Server::part(std::string after, Client const& client) {
 								PART_REPLY(client, after));
 			at_channel->removeUser(client);
 		} else {
-			client.Output(ERR_NOTONCHANNEL);
+			client.Output(ERR_NOTONCHANNEL("PART"));
 		}
 	}
 }
@@ -219,7 +208,7 @@ void Server::kick(std::string after, Client const& client) {
 	if (!channel->is_operator(client)) {
 		if (channel->findnick(client._nickname)
 			== channel->_clients_op.end()) {
-			client.Output(ERR_NOTONCHANNEL);
+			client.Output(ERR_NOTONCHANNEL("KICK"));
 		} else {
 			client.Output(ERR_CHANOPRIVSNEEDED);
 		}
@@ -289,7 +278,7 @@ void Server::invite(std::string after, Client const& client) {
 			client.Output(ERR_CHANOPRIVSNEEDED);
 			return;
 		}
-		client.Output(ERR_NOTONCHANNEL);
+		client.Output(ERR_NOTONCHANNEL("INVITE"));
 		return;
 	}
 	try {

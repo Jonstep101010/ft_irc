@@ -76,8 +76,8 @@
 	":" + _server_ip + " 403  * " + cmd + " :No such channel\r\n"
 
 // "<client name> <channel name> :You're not on that channel"
-#define ERR_NOTONCHANNEL                                        \
-	":" + _server_ip + " 442  * PART"                           \
+#define ERR_NOTONCHANNEL(cmd)                                   \
+	":" + _server_ip + " 442  * " + cmd                         \
 		+ " :You aren't on that channel\r\n"
 
 #define ERR_USERNOTINCHANNEL(_server_ip, user_name)             \
@@ -106,8 +106,8 @@
 		+ channel->_name + "\r\n"
 
 #define ERR_INVITEONLYCHAN                                      \
-	":" + _server_ip + " 473  * JOIN"                           \
-		+ " :Cannot join channel (+i)\r\n"
+	":" + _server_ip + " 473 *" + channel_name                  \
+		+ " : Cannot join channel (+i)\r\n "
 
 #define ERR_ERRONEUSNICKNAME(client)                            \
 	":" + _server_ip + " 432 " + client._nickname               \
