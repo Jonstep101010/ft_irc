@@ -149,7 +149,7 @@ void Server::part(std::string after, Client const& client) {
 	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
 	if (at_channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL("PART"));
+		client.Output(ERR_NOSUCHCHANNEL(channel_name));
 	} else {
 		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
@@ -182,7 +182,7 @@ void Server::kick(std::string after, Client const& client) {
 		= getComment(args, client._nickname);
 	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL("KICK"));
+		client.Output(ERR_NOSUCHCHANNEL(channel_name));
 		return;
 	}
 	if (!channel->is_operator(client)) {
@@ -239,7 +239,7 @@ void Server::invite(std::string after, Client const& client) {
 	std::vector<Channel>::iterator channel
 		= find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		return client.Output(ERR_NOSUCHCHANNEL("INVITE"));
+		return client.Output(ERR_NOSUCHCHANNEL(channel_name));
 	}
 	std::vector<Client>::iterator invitee
 		= findnick(invitee_nick, _clients);
@@ -252,9 +252,10 @@ void Server::invite(std::string after, Client const& client) {
 		client.Output(ERR_USERONCHANNEL(invitee_nick));
 		return;
 	}
+	// last was here worked!
 	if (!channel->is_operator(client)) {
 		if (channel->findnick(client._nickname)
-			== channel->_clients_op.end()) {
+			!= channel->_clients_op.end()) {
 			client.Output(ERR_CHANOPRIVSNEEDED);
 			return;
 		}
@@ -302,7 +303,7 @@ void Server::mode(std::string after, Client const& client) {
 	}
 	ChannelIt channel = find_cnl(args[0], _channels);
 	if (channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL("MODE"));
+		client.Output(ERR_NOSUCHCHANNEL(channel->_name));
 		return;
 	}
 	std::string channel_name = args[0];
@@ -468,7 +469,7 @@ void Server::executeCommand(Client&            client,
 		}
 		break;
 	case INVITE_:
-		invite(after, client);
+		invite(after, client); // check for
 		break;
 	case NICK:
 		nick(after, client);

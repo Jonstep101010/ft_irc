@@ -90,8 +90,8 @@
 		+ user_name + " " + comment + "\r\n"
 
 #define ERR_NOSUCHNICK(invitee_nick)                            \
-	":" + _server_ip + " 401 " + client._nickname + " "         \
-		+ invitee_nick + " :No such nick/channel\r\n"
+	":" + _server_ip + " 401 " + invitee_nick                   \
+		+ " :No such nick/channel\r\n"
 
 #define ERR_USERONCHANNEL(invitee_nick)                         \
 	":" + _server_ip + " 443 " + client._nickname + " "         \
