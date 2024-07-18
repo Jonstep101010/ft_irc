@@ -7,16 +7,6 @@
 #include <sstream>
 #include <vector>
 
-/*
-** --------------------------------- OVERLOAD ---------------------------------
-*/
-
-/*
-** --------------------------------- METHODS ----------------------------------
-*/
-
-// add user to channel
-// @follow-up handle modes, Client already joined, limit reached
 void Channel::addUser(const Client& client) {
 	ClientOpIt it
 		= std::find_if(_clients_op.begin(), _clients_op.end(),
@@ -33,17 +23,13 @@ void Channel::addUser(const Client& client) {
 	}
 }
 
-// remove user from channel
 void Channel::removeUser(Client const& client) {
-	// find user
-	// if found, remove user from channel
 	ClientOpIt toRemove
 		= std::find_if(_clients_op.begin(), _clients_op.end(),
 					   CompareClient(client));
 
 	if (toRemove != _clients_op.end()) {
 		_clients_op.erase(toRemove);
-		// make everyone operator if last one left
 		if (std::find_if(_clients_op.begin(), _clients_op.end(),
 						 CompareOperator(true))
 			== _clients_op.end()) {
@@ -55,11 +41,8 @@ void Channel::removeUser(Client const& client) {
 	}
 }
 
-// send message to all users in channel
 void Channel::Message(Client const&      origin,
 					  std::string const& message) {
-	// send message to all users in channel
-	// how to? @follow-up
 	if (_clients_op.empty()) { return; }
 	std::ostringstream users;
 	for (size_t i = 0; i < _clients_op.size(); i++) {
@@ -81,7 +64,6 @@ void Channel::Message(Client const&      origin,
 	}
 }
 
-// set channel topic
 void Channel::setTopic(std::string& new_topic) {
 	new_topic[0] == ' ' ? new_topic = new_topic.substr(1)
 						: new_topic;
@@ -89,9 +71,3 @@ void Channel::setTopic(std::string& new_topic) {
 						: new_topic;
 	_topic = new_topic;
 }
-
-/*
-** --------------------------------- ACCESSOR ---------------------------------
-*/
-
-/* ************************************************************************** */
