@@ -409,6 +409,11 @@ void Server::executeCommand(Client&            client,
 		client._awaiting_pong = false;
 		debug(PONG, "Received from " + client._nickname);
 	}
+	if (cmd == "PING") {
+		debug(PING, "Received from " + client._nickname);
+		client.Output("PONG " + after + "\r\n");
+		debug(PONG, "Sent to " + client._nickname);
+	}
 
 	bool is_channel = after[0] == '#' || after[0] == '&';
 	if (is_channel) { NormalizeChannelName(after); }
