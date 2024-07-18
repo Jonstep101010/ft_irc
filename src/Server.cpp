@@ -83,6 +83,10 @@ void Server::makeSocket() {
 		return;
 	}
 	int opt = 1;
+	if (setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		std::cerr << "Error setting socket options" << std::endl;
+		return;
+	}
 	#ifdef __APPLE__
 	if (fcntl(_server_socket, F_SETFL, O_NONBLOCK) < 0) {
 		std::cerr << "Error setting socket to non-blocking"
@@ -90,17 +94,10 @@ void Server::makeSocket() {
 		return;
 	}
 	#endif
-	if (setsockopt(_server_socket, SOL_SOCKET,
-				   SO_REUSEADDR | SO_REUSEPORT, &opt,
-				   sizeof(opt))
-		< 0) {
-		std::cerr << "Error setting socket options" << std::endl;
-		return;
-	}
 	struct sockaddr_in _server_addr = {.sin_family = AF_INET,
 									   .sin_port = htons(_port),
 									   .sin_addr = {
-										   .s_addr = INADDR_ANY,
+										   .s_addr = htonl(INADDR_LOOPBACK),
 									   }, .sin_zero = {0}};
 	if (bind(_server_socket, (struct sockaddr*)(&_server_addr),
 			 sizeof(_server_addr))
