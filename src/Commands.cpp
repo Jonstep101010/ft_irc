@@ -467,8 +467,8 @@ void Server::executeCommand(Client&            client,
 		client.Output("PONG " + after + "\r\n");
 		debug(PONG, "Sent to " + client._nickname);
 	}
-	bool is_channel = after[0] == '#' || after[0] == '&';
-	if (is_channel) { NormalizeChannelName(after); }
+	bool isChannel = after[0] == '#' || after[0] == '&';
+	if (isChannel) { NormalizeChannelName(after); }
 	switch (string_to_enum(cmd)) {
 	case JOIN:
 		if (isChannel) {
