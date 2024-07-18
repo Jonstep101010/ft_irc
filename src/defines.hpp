@@ -95,7 +95,7 @@
 
 #define ERR_USERONCHANNEL(invitee_nick)                         \
 	":" + _server_ip + " 443 " + invitee_nick + " "             \
-		+ channel->_name + " : is already on channel\r\n "
+		+ channel->_name + " : is already on channel\r\n"
 
 #define INVITE                                                  \
 	":" + client._nickname + " INVITE " + invitee->_nickname    \
@@ -105,9 +105,9 @@
 	"341 " + client._nickname + " " + invitee->_nickname + " "  \
 		+ channel->_name + "\r\n"
 
-#define ERR_INVITEONLYCHAN                                      \
-	":" + _server_ip + " 473 *" + channel_name                  \
-		+ " : Cannot join channel (+i)\r\n "
+#define ERR_INVITEONLYCHAN(name)                                \
+	":" + _server_ip + " 473 * " + name                         \
+		+ " : Cannot join channel (+i)\r\n"
 
 #define ERR_ERRONEUSNICKNAME(client)                            \
 	":" + _server_ip + " 432 " + client._nickname               \
@@ -115,7 +115,7 @@
 
 #define ERR_CHANNELNAMETOOLONG                                  \
 	":" + _server_ip + " 403 " + client._nickname + " "         \
-		+ channel_name + " :Channel name is too long" + "\r\n"
+		+ channel_name + " :Channel name is too long\r\n"
 
 #define ERR_BADCHANNELKEY                                       \
 	":" + _server_ip + " 461 * JOIN"                            \

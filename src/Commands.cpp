@@ -80,7 +80,7 @@ void Server::join(std::string   channel_name,
 			return;
 		}
 		if (to_join->_is_invite_only) {
-			client.Output(ERR_INVITEONLYCHAN);
+			client.Output(ERR_INVITEONLYCHAN(to_join->_name));
 			return;
 		}
 		try {
