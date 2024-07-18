@@ -236,7 +236,6 @@ void Server::handleInitialConnection(
 		if (!client._name.empty()
 			&& !checkIfAlreadyConnected(client)) {
 			client._isConnected = true;
-			client.Output(WELCOME_MESSAGE);
 		}
 	} else if (message.substr(0, 4) == "USER") {
 		client._name = message.substr(message.find(':') + 1);
