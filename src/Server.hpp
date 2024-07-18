@@ -24,41 +24,20 @@ public:
 	void start();
 	void acceptConnection(int listeningSocket);
 
-	// send bot message
 	void sendBotMessage(const std::string& targetNick,
 						const std::string& message);
 
-	// manage commands passed by clients @follow-up
 	void executeCommand(Client& client, std::string const& data);
-
-	// join a channel
 	void join(std::string channel_name, Client const& client);
-
-	// send message to channel or user
 	void privmsg(std::string after_cmd, Client const& client);
-
-	// quit the connection
 	void quit(std::string after_cmd, Client const& client);
-
-	// topic (set if operator (args), get if not (no args))
 	void topic(std::string after_cmd, Client const& client);
-
-	// removes client from channel
 	void part(std::string after, Client const& client);
-
-	// kick client from channel
 	void kick(std::string after, Client const& client);
-
-	// mode message (change multiple settings)
 	void mode(std::string after_cmd, Client const& client);
-
-	// invite a user to a channel
 	void invite(std::string after_cmd, Client const& client);
-
-	// change own nickname on server
 	void nick(std::string after_cmd, Client& client);
 
-	// signal and free
 	static void staticWrapperSignal(int sig);
 	void        signalHandler(int sig);
 

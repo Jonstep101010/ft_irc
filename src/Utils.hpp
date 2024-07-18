@@ -55,9 +55,7 @@ std::string getComment(const std::vector<std::string>& args,
 	if (args[2][0] != ':') { oss << ':'; }
 
 	for (size_t i = 2; i < args.size(); ++i) {
-		if (i > 2) {
-			oss << " ";
-		} // Add space before each word except the first
+		if (i > 2) { oss << " "; }
 		oss << args[i];
 	}
 	return oss.str();
@@ -102,12 +100,6 @@ std::string get_additional(std::string data) {
 	return "";
 }
 
-/**
- * @brief split data into substrings, add each to vector
- * 
- * @param data to split by spaces
- * @return std::vector<std::string>& 
- */
 std::vector<std::string> split_spaces(const std::string& data) {
 	std::vector<std::string> args;
 

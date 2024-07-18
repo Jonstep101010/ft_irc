@@ -1,9 +1,9 @@
-## nc/netcat (using localhost)
-### launch server
+## launch server
 ```shell
 # ./ircserv <port> <password>
 ./ircserv 9191 test
 ```
+## nc/netcat (using localhost)
 ### connect
 ```shell
 # nc -C <ip> <port>
@@ -29,8 +29,8 @@ timeout for getting disconnected is 60 seconds
 ```shell
 # ping from server for timeout
 PING netcat
-# respond with `PONG `
-PONG 
+# respond to server
+PONG
 ```
 ### send a message
 `PRIVMSG <nick/#channel> :<message>`
@@ -65,3 +65,9 @@ irssi -c localhost -p 9191 -w test
 # get the commands available
 !help
 ```
+## Commands example
+| Feature                | Command in `nc`                  | Command in `irssi`              |
+|------------------------|----------------------------------|---------------------------------|
+| Join/Create channel    | `JOIN #<channel>`                | `/join #<channel>`              |
+| Set channel invite only| `MODE #<channel> +i`             | `/mode #<channel> +i`           |
+| Kick user from channel | `KICK #<channel> <user_nick>`    | `/kick #<channel> <user_nick>`  |

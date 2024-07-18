@@ -22,17 +22,12 @@
 #include <fcntl.h>
 #endif
 
-#define PORT 8080
 #define PING_INTERVAL 60
-
-/*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
 
 Server::Server()
 	: _running(true)
 	, _server_socket(-1)
-	, _port(PORT)
+	, _port()
 	, _server_ip("not set")
 	, _server_bot(new Bot()) {
 	instance = this;
@@ -50,32 +45,21 @@ Server::Server(int port, std::string password)
 Server::Server(const Server& src)
 	: _running()
 	, _server_socket()
-	, _port(PORT)
+	, _port()
 	, _server_ip("not set") {
 	*this = src;
 }
-
-/*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
 
 Server::~Server() {
 	if (_server_socket >= 0) { close(_server_socket); }
 	delete _server_bot;
 }
 
-/*
-** --------------------------------- OVERLOAD ---------------------------------
-*/
-
 Server& Server::operator=(Server const& rhs) {
 	(void)rhs;
 	return *this;
 }
 
-/*
-@note Function which creates a socket and binds it to the server address
-*/
 void Server::makeSocket() {
 	_server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (_server_socket < 0) {
@@ -154,7 +138,6 @@ void Server::pingClients() {
 			debug(PING, "Sent to " + _clients[i]._nickname);
 		}
 
-		// Check if client has timed out
 		if (_clients[i]._awaiting_pong
 			&& current_time - _clients[i]._last_ping_sent
 				   > PING_INTERVAL) {
@@ -303,18 +286,13 @@ void Server::sendBotMessage(const std::string& targetNick,
 		debug(WARNING, "Target nick not found: " + targetNick);
 	}
 }
-/*
-@remind The user should be able to choose on which port and ip address to start the server
-@note We need to handle signals so when we CTRL + C the server will stop in a clean way
-*/
+
 void Server::start() {
 	makeSocket();
 	debug(INFO, "Server started on " + _server_ip + ":"
 					+ toString(_port));
 	debug(INFO, "Waiting for connections...");
-	// @follow-up Make the while loop to be until a signal was received
 	while (_running) {
-		// @follow-up Handle poll() and acceptConnection()
 		if (poll(_pollfds.data(), _pollfds.size(), 0) == -1
 			&& errno != EINTR) {
 			debug(ERROR, strerror(errno));

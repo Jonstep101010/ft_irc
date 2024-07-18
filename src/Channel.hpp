@@ -18,9 +18,6 @@ class Client;
 class Channel {
 
 public:
-	/*
-	** ------------------------------- CONSTRUCTOR --------------------------------
-	*/
 	Channel(std::string const& name)
 		: _name(name)
 		, _limit(-1)
@@ -52,27 +49,16 @@ public:
 		return false;
 	}
 
-	// @follow-up add method to get a mutable reference to a Client operator status
-
-	/// USER MANAGEMENT ///
-	// add user to channel
 	void addUser(Client const& client);
 
 	class LimitReached : public std::exception {};
-	// remove user from channel
+
 	void removeUser(Client const& client);
 
-	// send message to all Clients in channel
 	void Message(Client const&      origin,
 				 std::string const& message);
 
-	/// CHANNEL MANAGEMENT ///
-	// set channel topic
 	void setTopic(std::string& new_topic);
-	// set mode method (will be directed to member functions)
-	// @follow-up remove this/move ::mode here?
-	void setMode(std::string const& mode);
-	// @todo add mode specific functions
 
 	void chmod_op(MODE_OP change, std::string const& nick,
 				  Client const&      client,
@@ -86,7 +72,6 @@ public:
 	}
 
 	void setClientNick(std::string& old, std::string& newName) {
-		//change old name inside _clients_op to new
 		ClientOpIt it = findnick(old);
 		if (it != _clients_op.end()) {
 			it->first._nickname = newName;
@@ -140,5 +125,5 @@ private:
 	int         _limit;
 	bool        _is_invite_only;
 	bool        _topic_protection;
-	std::string _key; // if empty, no key required
+	std::string _key;
 };

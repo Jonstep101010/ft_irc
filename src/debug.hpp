@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 
-// Color definitions
 #define RESET "\033[0m"
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -28,7 +27,6 @@
 #define SHOW_DEBUG 0
 #define SHOW_SOCKET_INFO 0
 
-// Debug message types
 enum DebugType {
 	ERROR,
 	INFO,
@@ -44,7 +42,6 @@ enum DebugType {
 	MESSAGE_OUTPUT
 };
 
-// Debug function declaration
 inline void debug(DebugType type, const std::string& message) {
 	if ((type == DEBUG && !SHOW_DEBUG)
 		|| ((type == SOCKET || type == MESSAGE_OUTPUT)
