@@ -462,8 +462,13 @@ void Server::executeCommand(Client&            client,
 		client._awaiting_pong = false;
 		debug(PONG, "Received from " + client._nickname);
 	}
-	bool isChannel = after[0] == '#' || after[0] == '&';
-	if (isChannel) { NormalizeChannelName(after); }
+	if (cmd == "PING") {
+		debug(PING, "Received from " + client._nickname);
+		client.Output("PONG " + after + "\r\n");
+		debug(PONG, "Sent to " + client._nickname);
+	}
+	bool is_channel = after[0] == '#' || after[0] == '&';
+	if (is_channel) { NormalizeChannelName(after); }
 	switch (string_to_enum(cmd)) {
 	case JOIN:
 		if (isChannel) {
