@@ -42,6 +42,11 @@
  */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
+	if (channel_name.length() < 2 || channel_name == "#"
+		|| channel_name == "&") {
+		client.Output(ERR_NEEDMOREPARAMS(std::string("JOIN")));
+		return;
+	}
 	if (channel_name == "#0" || channel_name == "&0") {
 		for (ChannelIt it = _channels.begin();
 			 it != _channels.end(); ++it) {
@@ -64,7 +69,6 @@ void Server::join(std::string   channel_name,
 		return;
 	}
 	if (to_join == _channels.end()) {
-		// can a channel be created with a key? @aceauses @follow-up
 		Channel new_cnl(channel_name);
 		new_cnl.addUser(client);
 		new_cnl._clients_op[0].second = true;
@@ -76,10 +80,14 @@ void Server::join(std::string   channel_name,
 			return;
 		}
 		if (to_join->_is_invite_only) {
-			client.Output(ERR_INVITEONLYCHAN);
+			client.Output(ERR_INVITEONLYCHAN(to_join->_name));
+			return;
 		}
 		try {
 			to_join->addUser(client);
+			if (!to_join->_topic.empty()) {
+				client.Output(RPL_TOPIC(to_join));
+			}
 		} catch (Channel::LimitReached&) {
 			client.Output(ERR_CHANNELISFULL);
 		}
@@ -87,12 +95,29 @@ void Server::join(std::string   channel_name,
 }
 
 void Server::privmsg(std::string after, Client const& client) {
+	if (after.empty()) {
+		client.Output(ERR_NORECIPIENT("PRIVMSG"));
+		return;
+	}
+	if (get_after_cmd(after).empty()) {
+		client.Output(ERR_NOTEXTTOSEND);
+		return;
+	}
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
 	if (dest[0] == '#' || dest[0] == '&') {
 		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);
+		if (dest_channel == _channels.end()) {
+			client.Output(ERR_NOSUCHCHANNEL(dest));
+			return;
+		}
+		if (dest_channel->findnick(client._nickname)
+			== dest_channel->_clients_op.end()) {
+			client.Output(ERR_NOTONCHANNEL("PRIVMSG"));
+			return;
+		}
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
 		}
@@ -103,6 +128,10 @@ void Server::privmsg(std::string after, Client const& client) {
 		}
 	} else {
 		ClientIt dest_client = Server::findnick(dest, _clients);
+		if (dest_client == _clients.end()) {
+			client.Output(ERR_NOSUCHNICK(dest));
+			return;
+		}
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG_USER);
 		}
@@ -140,7 +169,7 @@ void Server::part(std::string after, Client const& client) {
 	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
 	if (at_channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL);
+		client.Output(ERR_NOSUCHCHANNEL(channel_name));
 	} else {
 		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
@@ -150,7 +179,7 @@ void Server::part(std::string after, Client const& client) {
 								PART_REPLY(client, after));
 			at_channel->removeUser(client);
 		} else {
-			client.Output(ERR_NOTONCHANNEL);
+			client.Output(ERR_NOTONCHANNEL("PART"));
 		}
 	}
 }
@@ -164,7 +193,7 @@ void Server::part(std::string after, Client const& client) {
 void Server::kick(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() < 2) {
-		client.Output(ERR_NEEDMOREPARAMS);
+		client.Output(ERR_NEEDMOREPARAMS(std::string("KICK")));
 		return;
 	}
 	const std::string channel_name = args[0];
@@ -173,13 +202,13 @@ void Server::kick(std::string after, Client const& client) {
 		= getComment(args, client._nickname);
 	ChannelIt channel = find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL);
+		client.Output(ERR_NOSUCHCHANNEL(channel_name));
 		return;
 	}
 	if (!channel->is_operator(client)) {
 		if (channel->findnick(client._nickname)
 			== channel->_clients_op.end()) {
-			client.Output(ERR_NOTONCHANNEL);
+			client.Output(ERR_NOTONCHANNEL("KICK"));
 		} else {
 			client.Output(ERR_CHANOPRIVSNEEDED);
 		}
@@ -187,7 +216,8 @@ void Server::kick(std::string after, Client const& client) {
 	}
 	ClientIt kicked_user = Server::findnick(user_name, _clients);
 	if (kicked_user == _clients.end()) {
-		client.Output(ERR_USERNOTINCHANNEL);
+		client.Output(
+			ERR_USERNOTINCHANNEL(_server_ip, user_name));
 		return;
 	}
 	channel->Message(client, KICK_NOTICE);
@@ -206,8 +236,9 @@ void Server::topic(std::string after, Client const& client) {
 	if (new_topic.empty()
 		&& after[after.find_first_of(" ") + 1] != ':') {
 		// only single channel is given as argument, possible postfix of space
-		channel->_topic.empty() ? client.Output(RPL_NOTOPIC)
-								: client.Output(RPL_TOPIC);
+		channel->_topic.empty()
+			? client.Output(RPL_NOTOPIC)
+			: client.Output(RPL_TOPIC(channel));
 	} else {
 		!channel->_topic_protection
 				|| channel->is_operator(client)
@@ -218,17 +249,17 @@ void Server::topic(std::string after, Client const& client) {
 
 void Server::invite(std::string after, Client const& client) {
 	size_t space_pos = after.find_first_of(" ");
-	if (space_pos == std::string::npos) {
-		return client.Output(ERR_NEEDMOREPARAMS);
+	if (space_pos == std::string::npos || after == " ") {
+		return client.Output(
+			ERR_NEEDMOREPARAMS(std::string("INVITE")));
 	}
-
 	const std::string invitee_nick = after.substr(0, space_pos);
 	const std::string channel_name = after.substr(space_pos + 1);
 
 	std::vector<Channel>::iterator channel
 		= find_cnl(channel_name, _channels);
 	if (channel == _channels.end()) {
-		return client.Output(ERR_NOSUCHCHANNEL);
+		return client.Output(ERR_NOSUCHCHANNEL(channel_name));
 	}
 	std::vector<Client>::iterator invitee
 		= findnick(invitee_nick, _clients);
@@ -243,11 +274,11 @@ void Server::invite(std::string after, Client const& client) {
 	}
 	if (!channel->is_operator(client)) {
 		if (channel->findnick(client._nickname)
-			== channel->_clients_op.end()) {
+			!= channel->_clients_op.end()) {
 			client.Output(ERR_CHANOPRIVSNEEDED);
 			return;
 		}
-		client.Output(ERR_NOTONCHANNEL);
+		client.Output(ERR_NOTONCHANNEL("INVITE"));
 		return;
 	}
 	try {
@@ -274,26 +305,36 @@ typedef enum e_modes {
 // "MODE #channel_name -l" -> ["#channel_name", "-l"] // in case of removing limit, no optarg
 // "MODE #channel_name +i" -> ["#channel_name", "+i"]
 // "MODE #channel_name +t" -> ["#channel_name", "+t"]
+// #channelname = 0 size and flag is size 1
 void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
-	if (args.size() > 3) { return; }
-	// @note handle error
+	if (args.size() <= 2) {
+		std::string mode = args.size() == 2 ? args[1] : "";
+		mode.erase(std::remove(mode.begin(), mode.end(), '+'),
+				   mode.end());
+		mode.erase(std::remove(mode.begin(), mode.end(), '-'),
+				   mode.end());
+		if (mode.find('l') == std::string::npos
+			&& mode.find('i') == std::string::npos
+			&& mode.find('t') == std::string::npos) {
+			client.Output(ERR_NEEDMOREPARAMS("MODE"));
+			return;
+		}
+	}
 	ChannelIt channel = find_cnl(args[0], _channels);
-	if (channel == _channels.end()) { return; }
-	// @todo handle error, channel not existing, user not being member,...
-	if (!channel->is_operator(client)) { return; }
-	if (args.size() < 2) {
-		client.Output(ERR_NEEDMOREPARAMS);
+	if (channel == _channels.end()) {
+		client.Output(ERR_NOSUCHCHANNEL(args[0]));
 		return;
 	}
-	// args[0] = channel_name
+	std::string channel_name = args[0];
+	if (!channel->is_operator(client)) {
+		client.Output(ERR_CHANOPRIVSNEEDED);
+		return;
+	}
 	if ((args[1][0] != ADD && args[1][0] != RM)
-		|| !strchr("ikotl", args[1][1]) || args[1][2]) {
-		return;
-	}
-	if (args.size() == 3 && args[1][1] != 'k'
-		&& args[1][1] != 'l' && args[1][1] != 'o') {
-		// invalid number of arguments
+		|| (strchr("ikotl", args[1][1]) == 0)
+		|| (args[1][2] != 0)) {
+		client.Output(ERR_UNKNOWNMODE(args[1]));
 		return;
 	}
 	debug(DEBUG, "MODE vec[0]'" + args[0] + "'");
@@ -301,9 +342,6 @@ void Server::mode(std::string after, Client const& client) {
 	if (args.size() == 3) {
 		debug(DEBUG, "MODE vec[2]'" + args[2] + "'");
 	}
-	// @note priviledged access
-	// @follow-up more sophisticated parsing/checking
-	// @todo handle error
 	MODE_OP op_todo
 		= static_cast<MODE_OP>(static_cast<int>(args[1][0]));
 	MODES to_mod
@@ -315,6 +353,12 @@ void Server::mode(std::string after, Client const& client) {
 		return;
 	}
 	case KEY_SET: {
+		if (!channel->_key.empty()) {
+			if (op_todo == ADD) {
+				client.Output(ERR_KEYSET);
+				return;
+			}
+		}
 		channel->_key = (op_todo == ADD) ? args[2]
 					  : (op_todo == RM)  ? ""
 										 : channel->_key;
@@ -322,10 +366,10 @@ void Server::mode(std::string after, Client const& client) {
 	}
 	case OP_PERM: {
 		if (!args[2].empty()) {
-			channel->chmod_op(op_todo, args[2]);
+			channel->chmod_op(op_todo, args[2], client,
+							  _server_ip);
 		}
 		return;
-		// @follow-up
 	}
 	case TOPIC_PROTECT: {
 		channel->_topic_protection = (op_todo == ADD);
@@ -360,14 +404,12 @@ static bool valid_char(std::string after) {
 }
 
 void Server::nick(std::string after, Client& client) {
-
-	// @todo add more checks here
-	if (!valid_char(after)) {
-		client.Output(ERR_ERRONEUSNICKNAME(client));
+	if (after.empty()) {
+		client.Output(ERR_NONICKNAMEGIVEN);
 		return;
 	}
-	if (after.length() == 0) {
-		client.Output(ERR_NONICKNAMEGIVEN);
+	if (!valid_char(after)) {
+		client.Output(ERR_ERRONEUSNICKNAME(client));
 		return;
 	}
 	if (findnick(after, _clients) != _clients.end()) {
@@ -414,36 +456,50 @@ void Server::executeCommand(Client&            client,
 		client.Output("PONG " + after + "\r\n");
 		debug(PONG, "Sent to " + client._nickname);
 	}
-
-	bool is_channel = after[0] == '#' || after[0] == '&';
-	if (is_channel) { NormalizeChannelName(after); }
-
+	bool isChannel = after[0] == '#' || after[0] == '&';
+	if (isChannel) { NormalizeChannelName(after); }
 	switch (string_to_enum(cmd)) {
-	case e_JOIN:
-		if (is_channel) { join(after, client); }
+	case JOIN:
+		if (isChannel) {
+			join(after, client);
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
-	case e_TOPIC:
-		if (is_channel) { topic(after, client); }
+	case TOPIC:
+		if (isChannel) {
+			topic(after, client);
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
-	case e_PART:
-		if (is_channel) { part(after, client); }
+	case PART:
+		if (isChannel) {
+			part(after, client);
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
-	case e_KICK:
-		if (is_channel) { kick(after, client); }
+	case KICK:
+		kick(after, client);
 		break;
-	case e_MODE:
-		if (is_channel) { mode(after, client); }
+	case MODE:
+		if (isChannel) {
+			mode(after, client);
+		} else {
+			client.Output(ERR_NEEDMOREPARAMS(cmd));
+		}
 		break;
-	case e_INVITE:
+	case INVITE_:
 		invite(after, client);
 		break;
-	case e_NICK:
+	case NICK:
 		nick(after, client);
 		break;
-	case e_PRIVMSG:
+	case PRIVMSG:
 		privmsg(after, client);
 		break;
-	case e_BAD_COMMAND:
+	case BAD_COMMAND:
 		break;
 	}
 }

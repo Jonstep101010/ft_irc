@@ -4,7 +4,7 @@
  * @brief acknowledgement of a user joining a channel
  */
 
-#define MAX_INPUT_MSG 510
+#define MAX_INPUT_LEN 510
 
 #define JOINEDREPLY                                             \
 	":" + client._nickname + "@"                                \
@@ -51,36 +51,37 @@
 	":" + _server_ip + " 471 " + client._nickname + " "         \
 		+ channel_name + " :Cannot join channel (+l)\r\n"
 
-#define RPL_TOPIC                                               \
+#define RPL_TOPIC(channel)                                      \
 	":" + _server_ip + " 332 " + client._nickname + " "         \
 		+ channel_name + " :" + channel->_topic + "\r\n"
 
 #define ERR_CHANOPRIVSNEEDED                                    \
 	":" + _server_ip + " 482 " + client._nickname + " "         \
 		+ channel_name + " :You're not channel operator\r\n"
+
 #define ERR_PASSWDMISMATCH                                      \
 	":" + _server_ip + " 464 * :Password incorrect\r\n"
 
-#define ERR_NEEDMOREPARAMS                                      \
-	":" + _server_ip + " 461 * PASS :Not enough parameters\r\n"
+#define ERR_NEEDMOREPARAMS(cmd)                                 \
+	":" + _server_ip + " 461 * " + cmd                          \
+		+ " :Not enough parameters\r\n"
 
-// :originNick!originUser@originHost PART #irctest :I'm joined to too many channels already
+// :john!username@hostname PART #test :Goodbye!
 #define PART_REPLY(client, current_channel_name)                \
 	":" + client._nickname + "!" + client._name + "@"           \
 		+ client._ip + " PART " + current_channel_name + "\r\n"
 
 // "<channel name> :No such channel"
-#define ERR_NOSUCHCHANNEL                                       \
-	"403 " + client._nickname + " " + channel_name              \
-		+ " :No such channel" + "\r\n"
+#define ERR_NOSUCHCHANNEL(cmd)                                  \
+	":" + _server_ip + " 403  * " + cmd + " :No such channel\r\n"
 
 // "<client name> <channel name> :You're not on that channel"
-#define ERR_NOTONCHANNEL                                        \
-	"442 " + client._nickname + " " + channel_name              \
-		+ " :You're not on that channel" + "\r\n"
+#define ERR_NOTONCHANNEL(cmd)                                   \
+	":" + _server_ip + " 442  * " + cmd                         \
+		+ " :You aren't on that channel\r\n"
 
-#define ERR_USERNOTINCHANNEL                                    \
-	"441 " + kicked_user->_nickname + " " + channel_name        \
+#define ERR_USERNOTINCHANNEL(_server_ip, user_name)             \
+	":" + _server_ip + " 441 " + user_name                      \
 		+ " :They aren't on that channel" + "\r\n"
 
 #define KICK_NOTICE                                             \
@@ -89,13 +90,12 @@
 		+ user_name + " " + comment + "\r\n"
 
 #define ERR_NOSUCHNICK(invitee_nick)                            \
-	":" + _server_ip + " 401 " + client._nickname + " "         \
-		+ invitee_nick + " :No such nick/channel\r\n"
+	":" + _server_ip + " 401 " + invitee_nick                   \
+		+ " :No such nick/channel\r\n"
 
 #define ERR_USERONCHANNEL(invitee_nick)                         \
-	":" + _server_ip + " 443 " + client._nickname + " "         \
-		+ invitee_nick + " " + channel->_name                   \
-		+ " :is already on channel\r\n"
+	":" + _server_ip + " 443 " + invitee_nick + " "             \
+		+ channel->_name + " : is already on channel\r\n"
 
 #define INVITE                                                  \
 	":" + client._nickname + " INVITE " + invitee->_nickname    \
@@ -105,9 +105,9 @@
 	"341 " + client._nickname + " " + invitee->_nickname + " "  \
 		+ channel->_name + "\r\n"
 
-#define ERR_INVITEONLYCHAN                                      \
-	"473 " + client._nickname + " " + channel_name              \
-		+ " :Cannot join channel (+i)\r\n"
+#define ERR_INVITEONLYCHAN(name)                                \
+	":" + _server_ip + " 473 * " + name                         \
+		+ " : Cannot join channel (+i)\r\n"
 
 #define ERR_ERRONEUSNICKNAME(client)                            \
 	":" + _server_ip + " 432 " + client._nickname               \
@@ -115,20 +115,41 @@
 
 #define ERR_CHANNELNAMETOOLONG                                  \
 	":" + _server_ip + " 403 " + client._nickname + " "         \
-		+ channel_name + " :Channel name is too long" + "\r\n"
+		+ channel_name + " :Channel name is too long\r\n"
 
 #define ERR_BADCHANNELKEY                                       \
-	"475 " + client._nickname + " " + channel_name              \
+	":" + _server_ip + " 461 * JOIN"                            \
 		+ " :Cannot join channel (+k)\r\n"
 
 #define ERR_NONICKNAMEGIVEN                                     \
-	"431 " + client._nickname + " :Nickname not given\r\n"
+	":" + _server_ip + " 431 " + client._nickname               \
+		+ " :Nickname not given\r\n"
 
 #define ERR_NICKNAMEINUSE                                       \
-	"433 " + client._nickname + " " + client._nickname          \
-		+ " :Nickname is already in use\r\n"
+	":" + _server_ip + " 433 " + client._nickname               \
+		+ " :Nickname already in use\r\n"
 
 //:WiZ!jto@tolsun.oulu.fi NICK Kilroy
 #define NICK_REPLY                                              \
 	":" + oldNick + "!" + client._name + "@" + client._ip       \
 		+ " NICK " + after + "\r\n"
+
+#define ERR_KEYSET                                              \
+	":" + _server_ip + " 467 " + client._nickname               \
+		+ " :Channel key already set\r\n"
+
+#define ERR_UNKNOWNMODE(_char)                                  \
+	":" + _server_ip + " 472 " + client._nickname + " " + _char \
+		+ " :is unknown mode char to me for " + channel_name    \
+		+ "\r\n"
+
+#define ERR_NORECIPIENT(_char)                                  \
+	":" + _server_ip + " 411 " _char + " :No recipient given "  \
+		+ _char + "\r\n"
+
+#define ERR_NOTEXTTOSEND                                        \
+	":" + _server_ip + " 412 * :No text to send\r\n"
+
+#define ERR_CANNOTSENDTOCHAN(channel_name)                      \
+	":" + _server_ip + " 404 " + client._nickname + " "         \
+		+ channel_name + " :Cannot send to channel\r\n"

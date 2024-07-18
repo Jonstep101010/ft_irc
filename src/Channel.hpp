@@ -1,5 +1,6 @@
 #pragma once
 #include "Client.hpp"
+#include "defines.hpp"
 #include "typedef.hpp"
 #include <algorithm>
 #include <string>
@@ -73,13 +74,14 @@ public:
 	void setMode(std::string const& mode);
 	// @todo add mode specific functions
 
-	void chmod_op(MODE_OP change, std::string const& nick) {
+	void chmod_op(MODE_OP change, std::string const& nick,
+				  Client const&      client,
+				  std::string const& server_ip) {
 		ClientOpIt it = findnick(nick);
 		if (it != _clients_op.end()) {
-			// handle already given?
 			it->second = (change == ADD);
 		} else {
-			// some handling (client not on channel)
+			client.Output(ERR_USERNOTINCHANNEL(server_ip, nick));
 		}
 	}
 

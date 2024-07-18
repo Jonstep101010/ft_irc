@@ -164,7 +164,7 @@ void Server::pingClients() {
 }
 
 void Server::handleClientData(Client& client) {
-	char    buffer[MAX_INPUT_MSG];
+	char    buffer[MAX_INPUT_LEN];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
@@ -220,7 +220,7 @@ void Server::handlePassCommand(Client&     client,
 		debug(CLIENT, "Password correct");
 		client._LoggedIn = true;
 	} else if (password.empty()) {
-		client.Output(ERR_NEEDMOREPARAMS);
+		client.Output(ERR_NEEDMOREPARAMS(std::string("PASS")));
 	} else {
 		client.Output(ERR_PASSWDMISMATCH);
 		this->quit("", client);
