@@ -156,7 +156,7 @@ void Server::pingClients() {
 }
 
 void Server::handleClientData(Client& client) {
-	char    buffer[MAX_INPUT];
+	char    buffer[MAX_INPUT_LEN];
 	ssize_t bytesReceived
 		= recv(client._ClientSocket, buffer, sizeof(buffer), 0);
 	if (bytesReceived == -1) {
