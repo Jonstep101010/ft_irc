@@ -94,9 +94,8 @@
 		+ " :No such nick/channel\r\n"
 
 #define ERR_USERONCHANNEL(invitee_nick)                         \
-	":" + _server_ip + " 443 " + client._nickname + " "         \
-		+ invitee_nick + " " + channel->_name                   \
-		+ " :is already on channel\r\n"
+	":" + _server_ip + " 443 " + invitee_nick + " "             \
+		+ channel->_name + " : is already on channel\r\n "
 
 #define INVITE                                                  \
 	":" + client._nickname + " INVITE " + invitee->_nickname    \
@@ -123,11 +122,12 @@
 		+ " :Cannot join channel (+k)\r\n"
 
 #define ERR_NONICKNAMEGIVEN                                     \
-	"431 " + client._nickname + " :Nickname not given\r\n"
+	":" + _server_ip + " 431 " + client._nickname               \
+		+ " :Nickname not given\r\n"
 
 #define ERR_NICKNAMEINUSE                                       \
-	"433 " + client._nickname + " " + client._nickname          \
-		+ " :Nickname is already in use\r\n"
+	":" + _server_ip + " 433 " + client._nickname               \
+		+ " :Nickname already in use\r\n"
 
 //:WiZ!jto@tolsun.oulu.fi NICK Kilroy
 #define NICK_REPLY                                              \
@@ -142,3 +142,14 @@
 	":" + _server_ip + " 472 " + client._nickname + " " + _char \
 		+ " :is unknown mode char to me for " + channel_name    \
 		+ "\r\n"
+
+#define ERR_NORECIPIENT(_char)                                  \
+	":" + _server_ip + " 411 " _char + " :No recipient given "  \
+		+ _char + "\r\n"
+
+#define ERR_NOTEXTTOSEND                                        \
+	":" + _server_ip + " 412 * :No text to send\r\n"
+
+#define ERR_CANNOTSENDTOCHAN(channel_name)                      \
+	":" + _server_ip + " 404 " + client._nickname + " "         \
+		+ channel_name + " :Cannot send to channel\r\n"

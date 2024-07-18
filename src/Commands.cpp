@@ -93,15 +93,43 @@ void Server::join(std::string   channel_name,
 			client.Output(ERR_CHANNELISFULL);
 		}
 	}
+	std::cout << "Client " << client._nickname
+			  << " joined channel " << channel_name << std::endl;
 }
 
 void Server::privmsg(std::string after, Client const& client) {
+	if (after.empty()) {
+		client.Output(ERR_NORECIPIENT("PRIVMSG"));
+		return;
+	}
+	if (get_after_cmd(after).empty()) {
+		client.Output(ERR_NOTEXTTOSEND);
+		return;
+	}
 	std::string dest = after.substr(0, after.find_first_of(" "));
 	std::string message
 		= after.substr(after.find_first_of(" ") + 2);
 	if (dest[0] == '#' || dest[0] == '&') {
 		ChannelIt dest_channel
 			= Server::find_cnl(dest, _channels);
+		if (dest_channel == _channels.end()) {
+			client.Output(ERR_NOSUCHCHANNEL(dest));
+			return;
+		}
+		if (dest_channel->findnick(client._nickname)
+			== dest_channel->_clients_op.end()) {
+			client.Output(ERR_NOTONCHANNEL);
+			return;
+		}
+		if (dest_channel->_is_invite_only) {
+			if (!dest_channel->is_operator(client)
+				|| dest_channel->findnick(client._nickname)
+					   == dest_channel->_clients_op.end()) {
+				client.Output(
+					ERR_CANNOTSENDTOCHAN(dest_channel->_name));
+				return;
+			}
+		}
 		if (dest_channel != _channels.end()) {
 			dest_channel->Message(client, PRIVMSG_CHANNEL);
 		}
@@ -112,6 +140,10 @@ void Server::privmsg(std::string after, Client const& client) {
 		}
 	} else {
 		ClientIt dest_client = Server::findnick(dest, _clients);
+		if (dest_client == _clients.end()) {
+			client.Output(ERR_NOSUCHNICK(dest));
+			return;
+		}
 		if (dest_client != _clients.end()) {
 			dest_client->Output(PRIVMSG_USER);
 		}
@@ -252,7 +284,6 @@ void Server::invite(std::string after, Client const& client) {
 		client.Output(ERR_USERONCHANNEL(invitee_nick));
 		return;
 	}
-	// last was here worked!
 	if (!channel->is_operator(client)) {
 		if (channel->findnick(client._nickname)
 			!= channel->_clients_op.end()) {
@@ -286,24 +317,25 @@ typedef enum e_modes {
 // "MODE #channel_name -l" -> ["#channel_name", "-l"] // in case of removing limit, no optarg
 // "MODE #channel_name +i" -> ["#channel_name", "+i"]
 // "MODE #channel_name +t" -> ["#channel_name", "+t"]
+// #channelname = 0 size and flag is size 1
 void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
-	if (args.size() != 3) {
-		if (args.size() <= 2) {
-			client.Output(
-				ERR_NEEDMOREPARAMS(std::string("MODE")));
-			return;
-		}
-		if (args[1][1] != 0
-			&& strchr("litk", args[1][1]) == NULL) {
-			client.Output(
-				ERR_NEEDMOREPARAMS(std::string("MODE")));
+	if (args.size() <= 2) {
+		std::string mode = args.size() == 2 ? args[1] : "";
+		mode.erase(std::remove(mode.begin(), mode.end(), '+'),
+				   mode.end());
+		mode.erase(std::remove(mode.begin(), mode.end(), '-'),
+				   mode.end());
+		if (mode.find('l') == std::string::npos
+			&& mode.find('i') == std::string::npos
+			&& mode.find('t') == std::string::npos) {
+			client.Output(ERR_NEEDMOREPARAMS("MODE"));
 			return;
 		}
 	}
 	ChannelIt channel = find_cnl(args[0], _channels);
 	if (channel == _channels.end()) {
-		client.Output(ERR_NOSUCHCHANNEL(channel->_name));
+		client.Output(ERR_NOSUCHCHANNEL(args[0]));
 		return;
 	}
 	std::string channel_name = args[0];
@@ -384,14 +416,12 @@ static bool valid_char(std::string after) {
 }
 
 void Server::nick(std::string after, Client& client) {
-
-	// @todo add more checks here
-	if (!valid_char(after)) {
-		client.Output(ERR_ERRONEUSNICKNAME(client));
+	if (after.empty()) {
+		client.Output(ERR_NONICKNAMEGIVEN);
 		return;
 	}
-	if (after.length() == 0) {
-		client.Output(ERR_NONICKNAMEGIVEN);
+	if (!valid_char(after)) {
+		client.Output(ERR_ERRONEUSNICKNAME(client));
 		return;
 	}
 	if (findnick(after, _clients) != _clients.end()) {
@@ -469,13 +499,13 @@ void Server::executeCommand(Client&            client,
 		}
 		break;
 	case INVITE_:
-		invite(after, client); // check for
+		invite(after, client); // all replies work
 		break;
 	case NICK:
-		nick(after, client);
+		nick(after, client); // all replies work
 		break;
 	case PRIVMSG:
-		privmsg(after, client);
+		privmsg(after, client); // all replies work
 		break;
 	case BAD_COMMAND:
 		break;
