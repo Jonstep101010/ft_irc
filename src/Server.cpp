@@ -83,17 +83,19 @@ void Server::makeSocket() {
 		return;
 	}
 	int opt = 1;
-	if (setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+	if (setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR,
+				   &opt, sizeof(opt))
+		< 0) {
 		std::cerr << "Error setting socket options" << std::endl;
 		return;
 	}
-	#ifdef __APPLE__
+#ifdef __APPLE__
 	if (fcntl(_server_socket, F_SETFL, O_NONBLOCK) < 0) {
 		std::cerr << "Error setting socket to non-blocking"
 				  << std::endl;
 		return;
 	}
-	#endif
+#endif
 	struct sockaddr_in _server_addr = {.sin_family = AF_INET,
 									   .sin_port = htons(_port),
 									   .sin_addr = {
@@ -227,6 +229,12 @@ void Server::handlePassCommand(Client&     client,
 	}
 }
 
+std::string sanitizeName(const std::string& username) {
+	std::string sanitized = username;
+	std::replace(sanitized.begin(), sanitized.end(), ' ', '_');
+	return sanitized;
+}
+
 void Server::handleInitialConnection(
 	Client& client, const std::string& message) {
 	debug(DEBUG, "Init: " + message);
@@ -236,7 +244,7 @@ void Server::handleInitialConnection(
 		std::string password = message.substr(5);
 		handlePassCommand(client, password);
 	} else if (message.substr(0, 4) == "NICK") {
-		client._nickname = message.substr(5);
+		client._nickname = sanitizeName(message.substr(5));
 		if (client._nickname.length() > MAX_NICKNAME_LEN) {
 			client.Output(ERR_ERRONEUSNICKNAME(client));
 			quit("", client);
@@ -246,7 +254,8 @@ void Server::handleInitialConnection(
 			client._isConnected = true;
 		}
 	} else if (message.substr(0, 4) == "USER") {
-		client._name = message.substr(message.find(':') + 1);
+		client._name = sanitizeName(
+			message.substr(message.find(':') + 1));
 		if (checkIfAlreadyConnected(client)) { return; }
 		client._isConnected = true;
 	}
