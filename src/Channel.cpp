@@ -4,7 +4,6 @@
 #include "defines.hpp"
 #include "typedef.hpp"
 #include <algorithm>
-#include <iterator>
 #include <sstream>
 #include <vector>
 
