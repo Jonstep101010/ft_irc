@@ -20,26 +20,6 @@
 #include <unistd.h>
 #include <vector>
 
-/* 
-	According to chad gpt
-
-	Most IRC servers treat channel names as case insensitive. This means:
-
-	Typing /join #TEST and /join #test usually takes you to the same channel.
-	Some servers might behave differently, but that's rare.
-	In general, don't worry about capitalization in channel names on IRC.
-
-
-	According to claudio
-
-	Typically, IRC servers treat channel names as case-insensitive.
-	This means that /join #TEST and /join #test would usually refer to the
-	same channel. This behavior is part of the IRC protocol standard.
-
-
-	for safety we will lowercase all channel names?
-
- */
 void Server::join(std::string   channel_name,
 				  Client const& client) {
 	if (channel_name.length() < 2 || channel_name == "#"
@@ -64,7 +44,6 @@ void Server::join(std::string   channel_name,
 		= split_spaces(channel_name);
 	ChannelIt to_join = find_cnl(name_key[0], _channels);
 	if (name_key[0].length() >= CHANNEL_NAME_LEN) {
-		// Handle error: channel name too long
 		client.Output(ERR_CHANNELNAMETOOLONG);
 		return;
 	}
@@ -142,13 +121,11 @@ void Server::quit(std::string after, Client const& client) {
 	debug(CLIENT, "Client Quit [" + client._nickname + "]");
 	after.empty() ? std::cout << std::endl
 				  : std::cout << ": " << after << std::endl;
-	// remove user from all channels
 	for (ChannelIt it = _channels.begin(); it != _channels.end();
 		 ++it) {
 		debug(DEBUG, "removing from channel: " + it->_name);
 		it->removeUser(client);
 	}
-	// remove user from clients
 	for (size_t i = 0; i < _pollfds.size(); ++i) {
 		if (_pollfds[i].fd == client._ClientSocket) {
 			_pollfds.erase(_pollfds.begin() + i);
@@ -160,18 +137,14 @@ void Server::quit(std::string after, Client const& client) {
 }
 
 void Server::part(std::string after, Client const& client) {
-
-	// Extract channel name
 	std::string channel_name
 		= after.substr(0, after.find_first_of(" "));
 
-	// Find the channel
 	ChannelIt at_channel = find_cnl(channel_name, _channels);
 
 	if (at_channel == _channels.end()) {
 		client.Output(ERR_NOSUCHCHANNEL(channel_name));
 	} else {
-		// Check if client is part of the channel
 		if (at_channel->findnick(client._nickname)
 			!= at_channel->_clients_op.end()) {
 			client.Output(PART_REPLY(client, after));
@@ -184,12 +157,6 @@ void Server::part(std::string after, Client const& client) {
 	}
 }
 
-// Parameters: <channel> *( "," <channel> ) <user> *( "," <user> ) [<comment>]
-// [channel_name, user_name, (:comment)]
-// If a "comment" is given, this will be sent instead of the default message, the nickname
-// of the user issuing the KICK.
-// 	KICK &Melbourne Matthew
-// 	KICK #Finnish John :Speaking English
 void Server::kick(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() < 2) {
@@ -235,7 +202,6 @@ void Server::topic(std::string after, Client const& client) {
 	std::string new_topic = get_additional(after);
 	if (new_topic.empty()
 		&& after[after.find_first_of(" ") + 1] != ':') {
-		// only single channel is given as argument, possible postfix of space
 		channel->_topic.empty()
 			? client.Output(RPL_NOTOPIC)
 			: client.Output(RPL_TOPIC(channel));
@@ -298,14 +264,6 @@ typedef enum e_modes {
 	LIMIT         = 'l',
 } MODES;
 
-// format of "MODE #channel_name opstring (optarg)" -> ["#channel_name", "opstring" (, "optarg")]
-// "MODE #channel_name +o nickname" -> ["#channel_name", "+l", /* needs prefix */ "username"]
-// "MODE #channel_name +k password" -> ["#channel_name", "+k", /* needs prefix */ "password"]
-// "MODE #channel_name +l number" -> ["#channel_name", "+l", /* needs prefix & needs to be positive */ "num"]
-// "MODE #channel_name -l" -> ["#channel_name", "-l"] // in case of removing limit, no optarg
-// "MODE #channel_name +i" -> ["#channel_name", "+i"]
-// "MODE #channel_name +t" -> ["#channel_name", "+t"]
-// #channelname = 0 size and flag is size 1
 void Server::mode(std::string after, Client const& client) {
 	std::vector<std::string> args = split_spaces(after);
 	if (args.size() <= 2) {
@@ -421,7 +379,6 @@ void Server::nick(std::string after, Client& client) {
 	client._nickname    = after;
 	client.Output(NICK_REPLY);
 
-	// Update nickname in channels, inform other clients, and update channel records
 	for (ChannelIt channel = _channels.begin();
 		 channel != _channels.end(); ++channel) {
 		if (channel->findnick(oldNick)
@@ -431,7 +388,6 @@ void Server::nick(std::string after, Client& client) {
 		}
 	}
 
-	// Update the client's nickname in the server's client list
 	for (ClientIt it = _clients.begin(); it != _clients.end();
 		 ++it) {
 		if (it->_nickname == oldNick) {

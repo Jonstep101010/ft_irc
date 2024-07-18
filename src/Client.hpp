@@ -6,14 +6,11 @@
 #include <string>
 #include <sys/socket.h>
 
-#define MAX_NICKNAME_LEN 9 // @todo implement this
+#define MAX_NICKNAME_LEN 9
 
 class Client {
 
 public:
-	/*
-	** ------------------------------- CONSTRUCTOR --------------------------------
-	*/
 	Client(std::string const& ip, int socket)
 		: _ip(ip)
 		, _ClientSocket(socket)
@@ -32,7 +29,6 @@ public:
 		send(_ClientSocket, message.c_str(), message.size(), 0);
 	}
 
-	// _name uniquely identifies a user @follow-up change to map?
 	bool operator==(const Client& other) const {
 		return this->_nickname == other._nickname;
 	}
