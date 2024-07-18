@@ -41,7 +41,14 @@ PRIVMSG bob :Hello, World!
 PRIVMSG #potato-lovers :Hello, World!
 ```
 ## IRSSI client
-connect with launch arguments
+### connect to server
+#### optional: using config
+```shell
+# located at `~/.irssi/config`
+# copy config after launching irssi the first time (to create ~/.irssi directory)
+cp ./config ~/.irssi/config
+```
+#### connect with launch arguments
 ```shell
 # irssi -c <ip> -p <port> -w <password>
 irssi -c localhost -p 9191 -w test
