@@ -8,6 +8,7 @@
 ```shell
 # nc -C <ip> <port>
 # `-C` tells nc to send CRLF (`\r\n`) line terminations
+# `-c` tells nc to send CRLF (`\r\n`) line terminations **MacOS only**
 nc -C localhost 9191
 ```
 ### authenticate
